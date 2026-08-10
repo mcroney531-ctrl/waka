@@ -15,7 +15,7 @@ not extend into the downstream public archive/publish workflow.
   all from CDNs. No build step. Open it, or serve it, and it runs. Two tabs:
   **Titles** (the acquisitions ledger) and **Keywords** (search terms to seed
   WorldCat lookups).
-- `brainstorm.html` — an AI keyword-generation page (see "Keyword brainstorm"
+- `brainstorm.html` — an AI keyword-brainstorm chat (see "Keyword brainstorm"
   below), linked from the ledger header.
 - Both share one "archive ledger" / card-catalog visual style (Special Elite /
   Lora / IBM Plex Mono, paper + stamp palette).
@@ -40,26 +40,30 @@ two `arch_` tables are touched.
   term surfaced the title), not a foreign key into `arch_keywords`. That's a
   conscious simplification for a solo tracker, not an oversight.
 - `arch_keywords` — search terms with an `unsearched` / `searched` status.
+- `arch_brainstorms` — saved brainstorm conversations (added with the chat
+  module). See "Keyword brainstorm" below.
 
 ## Security posture (read before sharing the URL)
 
 This is a personal, single-user, **no-auth** tool. The Supabase project URL and
-publishable (anon) key are baked into `index.html`. That is by design — those
+publishable (anon) key are baked into the pages. That is by design — those
 values are meant to be public; they are not secrets. Access is governed instead
-by Row Level Security on the two `arch_` tables.
+by Row Level Security on the three `arch_` tables.
 
-**Applied policy** (see `db/001_arch_public_rls_policies.sql`):
+**Applied policy** (see `db/001_arch_public_rls_policies.sql` and
+`db/002_arch_brainstorms_table.sql`):
 
 - `SELECT`, `INSERT`, `UPDATE` are open (`using (true)`) to the `anon` and
   `authenticated` roles so the browser app can function without a login.
-- **No `DELETE` policy exists** — on purpose. The anon key can add and edit rows
-  but **cannot delete** them, which caps the worst case to vandalism/edits
-  rather than data loss.
+- **No `DELETE` policy exists on any table** — on purpose. The anon key can add
+  and edit rows but **cannot delete** them, which caps the worst case to
+  vandalism/edits rather than data loss. (Removing a saved brainstorm is a soft
+  archive via `UPDATE`, not a delete.)
 - Policies target `anon, authenticated` explicitly rather than the implicit
   `PUBLIC` role (which in Postgres covers every role).
 
 **The accepted tradeoff:** anyone who has the URL (and therefore the public key)
-can read and write these two tables. For an unlinked personal tool this is fine.
+can read and write these tables. For an unlinked personal tool this is fine.
 It was a deliberate call, not a default — and it was reached after ruling out
 the alternatives:
 
@@ -75,13 +79,26 @@ rebuilding the UI. It was left out of this pass on purpose.
 
 ## Keyword brainstorm (AI, `brainstorm.html`)
 
-A second page, linked from the ledger header. Enter a topic (e.g. "Rwandan
-genocide") and it generates 18–25 candidate WorldCat search terms — people,
-places, events, organizations, alternate/foreign names, and adjacent topics —
-each with a one-line rationale. Pick the useful ones and promote them into the
-tracker's `arch_keywords` table (`source` tagged `brainstorm: <topic>`, status
-`unsearched`). Terms already in the tracker are shown dimmed and can't be
-re-added.
+A second page, linked from the ledger header: a **conversation** with Claude
+about what to search. Ask ("documentaries on the Rwandan genocide — what should
+I search?"), then steer ("more obscure," "focus on the filmmakers," "anything in
+French"). Claude replies in prose and, when it has concrete terms, surfaces them
+as selectable chips — people, places, events, organizations, alternate/foreign
+names, and adjacent topics, each with a one-line rationale. Select the useful
+ones and they promote into the tracker's `arch_keywords` table (`source` tagged
+`brainstorm: <title>`, status `unsearched`). Terms already tracked are dimmed
+and can't be re-added.
+
+**Saved sessions.** Each conversation auto-saves to the `arch_brainstorms` table
+and appears in the sidebar to reopen, rename, or remove. Removing is a soft
+archive (`archived = true`) — consistent with the no-hard-delete posture below,
+so nothing is ever truly deleted via the anon key. Promoted keywords live in
+`arch_keywords` regardless of what happens to the chat.
+
+**Under the hood.** The page keeps the message history in the browser and sends
+it to the edge function each turn, which relays it to the Anthropic Messages API
+with a `propose_keywords` tool (that tool is what produces the chips — chat needs
+prose, so the terms come through a tool call rather than a forced-JSON response).
 
 **How the AI stays secure on a static host.** The page cannot call the
 Anthropic API directly — that would expose a real API key in public page

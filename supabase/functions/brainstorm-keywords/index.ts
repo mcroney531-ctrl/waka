@@ -1,12 +1,16 @@
 // Supabase Edge Function: brainstorm-keywords
 //
-// Generates candidate WorldCat search keywords for a seed topic by calling the
-// Anthropic Messages API SERVER-SIDE. The Anthropic API key never touches the
-// browser — it lives only as the ANTHROPIC_API_KEY project secret (set it under
-// Project Settings -> Edge Functions -> Secrets, or `supabase secrets set`).
+// Conversational keyword brainstorming. The browser sends the full message
+// history each turn; this function calls the Anthropic Messages API SERVER-SIDE
+// (the API key never touches the browser) and returns the assistant turn.
 //
-// Auth: verify_jwt is ON, so callers must present the project's anon key. The
-// browser app sends it automatically via supabase-js `functions.invoke`.
+// Claude replies in natural prose and calls the `propose_keywords` tool when it
+// has concrete search terms — the browser renders those as one-click chips.
+//
+// Setup: set ANTHROPIC_API_KEY as a project secret (Project Settings -> Edge
+// Functions -> Secrets, or `supabase secrets set`).
+// Auth: verify_jwt is ON — callers present the project's anon key, which
+// supabase-js `functions.invoke` sends automatically.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const CORS = {
@@ -16,7 +20,6 @@ const CORS = {
 };
 
 const MODEL = "claude-opus-5";
-
 const CATEGORIES = ["person", "place", "event", "organization", "alias", "topic"];
 
 function json(body: unknown, status = 200) {
@@ -25,6 +28,44 @@ function json(body: unknown, status = 200) {
     headers: { ...CORS, "Content-Type": "application/json" },
   });
 }
+
+function systemPrompt(existing: string[]): string {
+  const have = existing.length
+    ? `Terms already in their tracker — do NOT propose these again:\n${existing.map((t) => "- " + t).join("\n")}`
+    : "Their tracker has no keywords yet.";
+  return `You are a research collaborator helping someone source rare and old geopolitical DOCUMENTARIES. They search WorldCat (a library catalog) with keywords, then track promising titles.
+
+Your role in this conversation is to be a thinking partner for finding good search terms. Talk naturally and stay conversational — ask a clarifying question when it helps, suggest angles, react to what they say, and explain briefly why a term might surface something. Keep replies fairly short, not essay-length.
+
+Whenever you have concrete search terms worth trying, call the propose_keywords tool with them (a sentence of framing alongside the call is fine). Favor non-obvious, specific proper nouns — people, places, events, organizations, alternate or foreign-language names, and adjacent topics — over generic phrases. Every term should be something they could actually type into a library catalog.
+
+${have}`;
+}
+
+const TOOL = {
+  name: "propose_keywords",
+  description:
+    "Show the user a set of candidate WorldCat search terms they can add to their tracker with one click. Call this whenever you have specific terms worth trying. You may include a short text message alongside the call.",
+  input_schema: {
+    type: "object",
+    properties: {
+      keywords: {
+        type: "array",
+        description: "The candidate search terms.",
+        items: {
+          type: "object",
+          properties: {
+            term: { type: "string", description: "The term to type into WorldCat." },
+            category: { type: "string", enum: CATEGORIES },
+            rationale: { type: "string", description: "One short clause on why it might surface a documentary." },
+          },
+          required: ["term", "category", "rationale"],
+        },
+      },
+    },
+    required: ["keywords"],
+  },
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -38,58 +79,18 @@ Deno.serve(async (req: Request) => {
     }, 500);
   }
 
-  let seed = "";
+  let messages: unknown = [];
   let existing: string[] = [];
   try {
     const body = await req.json();
-    seed = String(body?.seed ?? "").trim();
+    messages = body?.messages;
     existing = Array.isArray(body?.existing) ? body.existing.map(String) : [];
   } catch {
-    // fall through to the empty-seed check
+    // handled by the validation below
   }
-  if (!seed) return json({ error: "Provide a seed topic or term." }, 400);
-
-  const existingNote = existing.length
-    ? `\n\nThe user has ALREADY logged these terms, so do NOT repeat them:\n${
-      existing.map((t) => `- ${t}`).join("\n")
-    }`
-    : "";
-
-  const prompt =
-    `You are helping someone source rare and old geopolitical DOCUMENTARIES by generating keywords to search in WorldCat (a library catalog).
-
-Seed topic: "${seed}"
-
-Generate 18-25 search terms that could surface documentaries related to this topic, favoring the non-obvious ones a casual searcher would miss. Draw from across these categories:
-- person: key figures, filmmakers, leaders, witnesses
-- place: cities, regions, countries, specific sites
-- event: specific incidents, operations, campaigns, dated episodes
-- organization: movements, agencies, armed groups, tribunals
-- alias: alternate spellings, foreign-language terms, historical or contemporaneous names
-- topic: adjacent themes and framings worth a separate search
-
-Prefer specific proper nouns over generic phrases. Every term should be something you would actually type into a library catalog search. Keep each rationale to one short clause.${existingNote}`;
-
-  const schema = {
-    type: "object",
-    properties: {
-      keywords: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            term: { type: "string" },
-            category: { type: "string", enum: CATEGORIES },
-            rationale: { type: "string" },
-          },
-          required: ["term", "category", "rationale"],
-          additionalProperties: false,
-        },
-      },
-    },
-    required: ["keywords"],
-    additionalProperties: false,
-  };
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return json({ error: "No conversation to respond to." }, 400);
+  }
 
   let anthropicResp: Response;
   try {
@@ -103,9 +104,13 @@ Prefer specific proper nouns over generic phrases. Every term should be somethin
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 4000,
-        thinking: { type: "disabled" },
-        output_config: { format: { type: "json_schema", schema } },
-        messages: [{ role: "user", content: prompt }],
+        // Adaptive thinking left on (Opus 5 default): with tools present,
+        // disabling thinking risks the model emitting a tool call as plain
+        // text. Low effort keeps it snappy.
+        output_config: { effort: "low" },
+        system: systemPrompt(existing),
+        tools: [TOOL],
+        messages,
       }),
     });
   } catch (e) {
@@ -118,16 +123,11 @@ Prefer specific proper nouns over generic phrases. Every term should be somethin
   }
 
   const data = await anthropicResp.json();
-  const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === "text");
-  if (!textBlock?.text) return json({ error: "Empty response from the model." }, 502);
-
-  let keywords: unknown;
-  try {
-    keywords = JSON.parse(textBlock.text).keywords;
-  } catch {
-    return json({ error: "Could not parse the model's output." }, 502);
-  }
-  if (!Array.isArray(keywords)) return json({ error: "Model output was not a keyword list." }, 502);
-
-  return json({ keywords });
+  // Return the full assistant turn verbatim — including any thinking blocks —
+  // so the browser can store it and replay it unchanged on the next turn.
+  return json({
+    role: data.role ?? "assistant",
+    content: data.content ?? [],
+    stop_reason: data.stop_reason ?? null,
+  });
 });

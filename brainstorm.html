@@ -20,190 +20,119 @@
 
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:transparent;}
-body{
-  font-family:'Lora', serif;
-  color:var(--ink);
-  background:var(--paper);
-}
+body{ font-family:'Lora', serif; color:var(--ink); background:var(--paper); }
 #root{
   min-height:100%;
   background:var(--paper);
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px);
-  background-size: 100% 44px;
-  padding: 28px 20px 60px;
+  background-image:linear-gradient(var(--border) 1px, transparent 1px);
+  background-size:100% 44px;
+  padding:28px 20px 60px;
 }
-
-.wrap{ max-width: 860px; margin: 0 auto; }
+.wrap{ max-width:1000px; margin:0 auto; }
 
 .topbar{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
 .eyebrow{
-  font-family:'IBM Plex Mono', monospace;
-  font-size:11px;
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  color:var(--ink-faded);
-  margin:0 0 4px;
+  font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.14em;
+  text-transform:uppercase; color:var(--ink-faded); margin:0 0 4px;
 }
 .nav-link{
-  font-family:'IBM Plex Mono', monospace;
-  font-size:11px;
-  letter-spacing:0.06em;
-  text-transform:uppercase;
-  color:var(--ink-faded);
-  text-decoration:none;
-  border-bottom:1px solid var(--border);
-  white-space:nowrap;
+  font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink-faded); text-decoration:none;
+  border-bottom:1px solid var(--border); white-space:nowrap;
 }
 .nav-link:hover{ color:var(--ink); border-color:var(--ink); }
-h1{
-  font-family:'Special Elite', monospace;
-  font-weight:400;
-  font-size:26px;
-  margin:0 0 10px;
-  letter-spacing:0.01em;
-}
-.lede{
-  font-size:14px;
-  color:var(--ink-faded);
-  margin:0 0 20px;
-  max-width:64ch;
-  line-height:1.5;
-}
+h1{ font-family:'Special Elite', monospace; font-weight:400; font-size:24px; margin:0 0 16px; letter-spacing:0.01em; }
 
-.panel{
-  background:var(--paper);
-  border:1px solid var(--border);
-  border-radius:6px;
-  padding:18px;
-}
-
-input[type=text], textarea{
-  font-family:'Lora', serif;
-  font-size:14px;
-  color:var(--ink);
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:4px;
-  padding:9px 11px;
-}
+.layout{ display:flex; gap:18px; align-items:flex-start; }
+.sidebar{ width:230px; flex-shrink:0; }
+.chat{ flex:1; min-width:0; }
 
 button{
-  font-family:'IBM Plex Mono', monospace;
-  font-size:12px;
-  letter-spacing:0.03em;
-  cursor:pointer;
-  border-radius:4px;
-  border:1px solid var(--border);
-  background:var(--card);
-  color:var(--ink);
-  padding:9px 16px;
+  font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.03em;
+  cursor:pointer; border-radius:4px; border:1px solid var(--border);
+  background:var(--card); color:var(--ink); padding:8px 14px;
 }
 button:hover:not(:disabled){ border-color:var(--ink); }
 button:disabled{ opacity:0.5; cursor:default; }
 .btn-primary{ background:var(--green); color:var(--card); border-color:var(--green); }
 .btn-primary:hover:not(:disabled){ filter:brightness(1.08); }
+.btn-block{ width:100%; }
+.btn-quiet{ background:transparent; border-color:transparent; color:var(--ink-faded); padding:4px 6px; font-size:11px; }
+.btn-quiet:hover:not(:disabled){ color:var(--ink); border-color:transparent; }
 
-.seed-row{ display:flex; gap:10px; margin-bottom:8px; }
-.seed-row input{ flex:1; }
-.hint{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-faded); }
+.session{
+  display:flex; align-items:center; gap:6px;
+  border:1px solid var(--border); border-radius:5px;
+  padding:8px 10px; margin-top:8px; background:var(--card); cursor:pointer;
+}
+.session:hover{ border-color:var(--ink-faded); }
+.session.active{ border-color:var(--green); }
+.session .stitle{ font-family:'Lora', serif; font-size:13px; font-weight:500; line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.session .sdate{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--ink-faded); margin-top:3px; }
+.session .sgrow{ flex:1; min-width:0; }
+.sidebar-empty{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-faded); margin-top:10px; line-height:1.5; }
 
-.state-msg{
-  font-family:'IBM Plex Mono', monospace;
-  font-size:12px;
-  color:var(--ink-faded);
-  padding:24px 4px;
-  text-align:center;
+.panel{ background:var(--paper); border:1px solid var(--border); border-radius:6px; padding:0; display:flex; flex-direction:column; min-height:60vh; }
+.chat-head{
+  display:flex; align-items:center; gap:10px;
+  border-bottom:1px solid var(--border); padding:12px 16px;
+}
+.chat-title{ font-family:'Special Elite', monospace; font-size:14px; flex:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.stream{ flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+.msg{ animation:fadeInUp 0.2s ease both; }
+.msg .who{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--ink-faded); margin-bottom:4px; }
+.msg .body{ font-family:'Lora', serif; font-size:14.5px; line-height:1.55; white-space:pre-wrap; }
+.msg.user .body{ background:var(--card); border:1px solid var(--border); border-radius:6px; padding:9px 12px; }
+
+.chips{ margin-top:10px; border-left:2px solid var(--green); padding-left:12px; }
+.chips-head{ font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase;
+  letter-spacing:0.07em; color:var(--ink-faded); margin-bottom:8px; }
+.sugg{ display:flex; align-items:flex-start; gap:10px; padding:6px 0; cursor:pointer; }
+.sugg .box{ flex-shrink:0; width:15px; height:15px; margin-top:2px; border:1.5px solid var(--ink-faded);
+  border-radius:3px; display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--card); }
+.sugg.selected .box{ background:var(--green); border-color:var(--green); }
+.sugg .term{ font-family:'Lora', serif; font-weight:600; font-size:14px; }
+.sugg .cat{ font-family:'IBM Plex Mono', monospace; font-size:9px; text-transform:uppercase;
+  letter-spacing:0.05em; color:var(--ink-faded); border:1px solid var(--border);
+  border-radius:2px; padding:1px 5px; margin-left:7px; vertical-align:middle; }
+.sugg .why{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-faded); margin-top:2px; }
+.sugg.dupe{ cursor:default; opacity:0.5; }
+.sugg.dupe .box{ border-style:dashed; }
+
+.addbar{
+  display:flex; align-items:center; gap:10px;
+  border-top:1px solid var(--border); padding:10px 16px;
+  font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faded);
+}
+.addbar .spacer{ flex:1; }
+.toast{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--green); }
+
+.composer{ border-top:1px solid var(--border); padding:12px 16px; display:flex; gap:10px; align-items:flex-end; }
+textarea{
+  font-family:'Lora', serif; font-size:14px; color:var(--ink); background:var(--card);
+  border:1px solid var(--border); border-radius:4px; padding:9px 11px;
+  flex:1; resize:none; min-height:42px; max-height:160px; line-height:1.4;
+}
+.empty{
+  font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faded);
+  text-align:center; padding:40px 16px; line-height:1.6; margin:auto;
 }
 .error-banner{
-  background:var(--card);
-  border:1px solid var(--red);
-  color:var(--red);
-  border-radius:6px;
-  padding:11px 14px;
-  font-family:'IBM Plex Mono', monospace;
-  font-size:12px;
-  margin:16px 0 0;
+  background:var(--card); border:1px solid var(--red); color:var(--red); border-radius:6px;
+  padding:10px 14px; font-family:'IBM Plex Mono', monospace; font-size:12px; margin:0 16px 12px;
 }
 
-.results-head{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px 16px;
-  align-items:center;
-  border-top:1px solid var(--border);
-  margin-top:20px;
-  padding-top:16px;
-}
-.results-head .count{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faded); }
-.results-head .spacer{ flex:1; }
+@keyframes fadeInUp{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
 
-.cat-group{ margin-top:18px; }
-.cat-head{
-  font-family:'Special Elite', monospace;
-  font-size:12px;
-  text-transform:uppercase;
-  letter-spacing:0.08em;
-  color:var(--ink-faded);
-  margin:0 0 8px;
-  padding-bottom:4px;
-  border-bottom:1px dashed var(--border);
-}
-
-.sugg{
-  display:flex;
-  align-items:flex-start;
-  gap:11px;
-  padding:9px 6px;
-  border-bottom:1px solid var(--border);
-  cursor:pointer;
-  animation: fadeInUp 0.2s ease both;
-}
-.sugg:last-child{ border-bottom:none; }
-.sugg .box{
-  flex-shrink:0;
-  width:16px; height:16px;
-  margin-top:2px;
-  border:1.5px solid var(--ink-faded);
-  border-radius:3px;
-  display:flex; align-items:center; justify-content:center;
-  font-family:'IBM Plex Mono', monospace;
-  font-size:12px; line-height:1;
-  color:var(--card);
-}
-.sugg.selected .box{ background:var(--green); border-color:var(--green); }
-.sugg .term{ font-family:'Lora', serif; font-weight:600; font-size:14.5px; }
-.sugg .why{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-faded); margin-top:2px; }
-.sugg.dupe{ cursor:default; opacity:0.55; }
-.sugg.dupe .box{ border-style:dashed; }
-.dupe-tag{
-  font-family:'IBM Plex Mono', monospace;
-  font-size:9.5px;
-  text-transform:uppercase;
-  letter-spacing:0.05em;
-  color:var(--ink-faded);
-  border:1px solid var(--border);
-  border-radius:2px;
-  padding:1px 5px;
-  margin-left:8px;
-  vertical-align:middle;
-}
-
-.toast{
-  font-family:'IBM Plex Mono', monospace;
-  font-size:12px;
-  color:var(--green);
-  margin-top:14px;
-}
-
-@keyframes fadeInUp{
-  from{ opacity:0; transform:translateY(4px); }
-  to{ opacity:1; transform:translateY(0); }
-}
-
-@media (max-width: 560px){
-  h1{ font-size:21px; }
-  .seed-row{ flex-direction:column; }
+@media (max-width: 720px){
+  h1{ font-size:20px; }
+  .layout{ flex-direction:column; }
+  .sidebar{ width:100%; }
 }
 </style>
 </head>
@@ -216,109 +145,188 @@ button:disabled{ opacity:0.5; cursor:default; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
 <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 // Same public Supabase credentials as the ledger — safe to expose client-side.
 const SUPABASE_URL = 'https://fdbkdsracxomwyytfgob.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_w5izyYtgIXD-pQvjlkn4jg_DtGJq_7j';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const CATEGORY_ORDER = ['person', 'place', 'event', 'organization', 'alias', 'topic'];
 const CATEGORY_LABEL = {
-  person: 'People', place: 'Places', event: 'Events',
-  organization: 'Organizations', alias: 'Aliases & other names', topic: 'Adjacent topics'
+  person:'person', place:'place', event:'event',
+  organization:'org', alias:'alias', topic:'topic'
 };
-
 const norm = (s) => (s || '').trim().toLowerCase();
 
+// Pull the human-readable text out of a message's content (string or block array).
+function textOf(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content.filter(b => b && b.type === 'text').map(b => b.text).join('\n').trim();
+  }
+  return '';
+}
+// Collect propose_keywords tool calls in an assistant message.
+function keywordCalls(content) {
+  if (!Array.isArray(content)) return [];
+  return content
+    .filter(b => b && b.type === 'tool_use' && b.name === 'propose_keywords')
+    .map(b => Array.isArray(b.input && b.input.keywords) ? b.input.keywords : [])
+    .filter(list => list.length);
+}
+function shortDate(ts) {
+  try { return new Date(ts).toLocaleDateString(undefined, { month:'short', day:'numeric' }); }
+  catch { return ''; }
+}
+
 function App() {
-  const [seed, setSeed] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
-  const [lastSeed, setLastSeed] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [currentId, setCurrentId] = useState(null);
+  const [title, setTitle] = useState('New brainstorm');
+  const [messages, setMessages] = useState([]);      // Anthropic-shaped history
+  const [existing, setExisting] = useState(() => new Set());
   const [selected, setSelected] = useState(() => new Set());
-  const [existing, setExisting] = useState(() => new Set()); // normalized terms already in arch_keywords
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
+  const streamRef = useRef(null);
 
   const loadExisting = async () => {
     try {
       const { data, error } = await sb.from('arch_keywords').select('term');
       if (error) throw error;
       setExisting(new Set((data || []).map(r => norm(r.term))));
-    } catch (e) {
-      // Non-fatal — brainstorming still works, dedup just won't be pre-marked.
-      console.warn('Could not load existing keywords:', e.message);
-    }
+    } catch (e) { console.warn('existing keywords:', e.message); }
+  };
+  const loadSessions = async () => {
+    try {
+      const { data, error } = await sb.from('arch_brainstorms')
+        .select('id,title,updated_at').eq('archived', false)
+        .order('updated_at', { ascending:false });
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (e) { console.warn('sessions:', e.message); }
   };
 
-  useEffect(() => { loadExisting(); }, []);
+  useEffect(() => { loadExisting(); loadSessions(); }, []);
+  useEffect(() => {
+    if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight;
+  }, [messages, loading]);
 
-  const brainstorm = async () => {
-    const s = seed.trim();
-    if (!s) return;
-    setLoading(true); setError(null); setToast(null); setSuggestions([]); setSelected(new Set());
+  const newSession = () => {
+    setCurrentId(null); setTitle('New brainstorm'); setMessages([]);
+    setSelected(new Set()); setError(null); setToast(null); setInput('');
+  };
+  const openSession = async (id) => {
+    setError(null); setToast(null); setSelected(new Set());
+    try {
+      const { data, error } = await sb.from('arch_brainstorms')
+        .select('id,title,messages').eq('id', id).single();
+      if (error) throw error;
+      setCurrentId(data.id); setTitle(data.title || 'Untitled brainstorm');
+      setMessages(Array.isArray(data.messages) ? data.messages : []);
+      loadExisting();
+    } catch (e) { setError("Couldn't open that conversation — " + e.message); }
+  };
+  const renameSession = async () => {
+    const next = window.prompt('Rename this brainstorm:', title);
+    if (next == null) return;
+    const t = next.trim() || 'Untitled brainstorm';
+    setTitle(t);
+    if (currentId) {
+      try { await sb.from('arch_brainstorms').update({ title:t }).eq('id', currentId); loadSessions(); }
+      catch (e) { setError('Rename failed — ' + e.message); }
+    }
+  };
+  const archiveSession = async (id, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Remove this conversation from your list? (Promoted keywords stay in the tracker.)')) return;
+    try {
+      await sb.from('arch_brainstorms').update({ archived:true, updated_at:new Date().toISOString() }).eq('id', id);
+      if (id === currentId) newSession();
+      loadSessions();
+    } catch (err) { setError('Remove failed — ' + err.message); }
+  };
+
+  const persist = async (msgs) => {
+    try {
+      if (!currentId) {
+        const firstUser = msgs.find(m => m.role === 'user');
+        const t = (textOf(firstUser && firstUser.content) || 'Untitled brainstorm').slice(0, 60);
+        const { data, error } = await sb.from('arch_brainstorms')
+          .insert({ title:t, messages:msgs }).select('id,title').single();
+        if (error) throw error;
+        setCurrentId(data.id); setTitle(data.title);
+      } else {
+        const { error } = await sb.from('arch_brainstorms')
+          .update({ messages:msgs, updated_at:new Date().toISOString() }).eq('id', currentId);
+        if (error) throw error;
+      }
+      loadSessions();
+    } catch (e) { console.warn('save failed:', e.message); }
+  };
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setError(null); setToast(null);
+
+    // If the previous assistant turn ended with tool calls, answer them (required
+    // by the API) in the same user turn, then add the new text.
+    let userContent = text;
+    const last = messages[messages.length - 1];
+    if (last && last.role === 'assistant' && Array.isArray(last.content)) {
+      const toolUses = last.content.filter(b => b && b.type === 'tool_use');
+      if (toolUses.length) {
+        userContent = toolUses.map(tu => ({
+          type:'tool_result', tool_use_id: tu.id, content:'Suggestions were shown to the user.'
+        }));
+        userContent.push({ type:'text', text });
+      }
+    }
+    const next = [...messages, { role:'user', content:userContent }];
+    setMessages(next); setInput(''); setLoading(true);
     try {
       const { data, error } = await sb.functions.invoke('brainstorm-keywords', {
-        body: { seed: s, existing: Array.from(existing) }
+        body: { messages: next, existing: Array.from(existing) }
       });
       if (error) {
         let msg = error.message;
         try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (_) {}
         throw new Error(msg);
       }
-      const list = (data && Array.isArray(data.keywords)) ? data.keywords : [];
-      if (!list.length) throw new Error('The model came back empty — try a more specific seed.');
-      setSuggestions(list);
-      setLastSeed(s);
+      const assistant = { role: data.role || 'assistant', content: data.content || [] };
+      const after = [...next, assistant];
+      setMessages(after);
+      await persist(after);
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+      setMessages(messages); // roll back the optimistic user turn
+    } finally { setLoading(false); }
   };
 
   const toggle = (term) => {
-    if (existing.has(norm(term))) return; // already tracked; can't select
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(term)) next.delete(term); else next.add(term);
-      return next;
-    });
+    if (existing.has(norm(term))) return;
+    setSelected(prev => { const n = new Set(prev); n.has(term) ? n.delete(term) : n.add(term); return n; });
   };
-
   const promote = async () => {
     const picks = Array.from(selected).filter(t => !existing.has(norm(t)));
     if (!picks.length) return;
     setPromoting(true); setError(null); setToast(null);
     try {
-      const rows = picks.map(term => ({
-        term,
-        source: 'brainstorm: ' + lastSeed,
-        status: 'unsearched'
-      }));
+      const rows = picks.map(term => ({ term, source:'brainstorm: ' + title, status:'unsearched' }));
       const { error } = await sb.from('arch_keywords').insert(rows);
       if (error) throw error;
-      setToast('Added ' + picks.length + ' keyword' + (picks.length === 1 ? '' : 's') + ' to the tracker.');
+      setToast('Added ' + picks.length + ' to the tracker.');
       setSelected(new Set());
       await loadExisting();
-    } catch (e) {
-      setError("Couldn't add those — " + e.message);
-    } finally {
-      setPromoting(false);
-    }
+    } catch (e) { setError("Couldn't add those — " + e.message); }
+    finally { setPromoting(false); }
   };
 
-  const grouped = CATEGORY_ORDER
-    .map(cat => [cat, suggestions.filter(s => s.category === cat)])
-    .filter(([, items]) => items.length);
-  // any suggestions with an unexpected category fall into a trailing "Other" group
-  const known = new Set(CATEGORY_ORDER);
-  const other = suggestions.filter(s => !known.has(s.category));
-  if (other.length) grouped.push(['other', other]);
-
-  const selectableCount = suggestions.filter(s => !existing.has(norm(s.term))).length;
+  const selectableSelected = Array.from(selected).filter(t => !existing.has(norm(t)));
 
   return (
     <div className="wrap">
@@ -327,73 +335,105 @@ function App() {
         <a className="nav-link" href="./index.html">← Ledger</a>
       </div>
       <h1>Keyword Brainstorm</h1>
-      <p className="lede">
-        Give a topic and get search terms to try in WorldCat — people, places, events, organizations,
-        alternate names, and adjacent angles. Pick the ones worth chasing and send them to the ledger's
-        keyword list as <em>unsearched</em>.
-      </p>
 
-      <div className="panel">
-        <div className="seed-row">
-          <input
-            type="text"
-            placeholder="e.g. Rwandan genocide, Chilean coup 1973, apartheid resistance…"
-            value={seed}
-            onChange={e => setSeed(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') brainstorm(); }}
-          />
-          <button className="btn-primary" onClick={brainstorm} disabled={loading || !seed.trim()}>
-            {loading ? 'Thinking…' : 'Brainstorm'}
-          </button>
+      <div className="layout">
+        <div className="sidebar">
+          <button className="btn-primary btn-block" onClick={newSession}>＋ New brainstorm</button>
+          {sessions.length === 0 && (
+            <div className="sidebar-empty">No saved brainstorms yet. Start one — it saves automatically as you go.</div>
+          )}
+          {sessions.map(s => (
+            <div key={s.id} className={"session" + (s.id === currentId ? " active" : "")} onClick={() => openSession(s.id)}>
+              <div className="sgrow">
+                <div className="stitle">{s.title || 'Untitled brainstorm'}</div>
+                <div className="sdate">{shortDate(s.updated_at)}</div>
+              </div>
+              <button className="btn-quiet" title="Remove" onClick={(e) => archiveSession(s.id, e)}>✕</button>
+            </div>
+          ))}
         </div>
-        <div className="hint">Terms already in your tracker are shown dimmed and can't be re-added.</div>
 
-        {error && <div className="error-banner">{error}</div>}
-        {loading && <div className="state-msg">Consulting the index…</div>}
-
-        {!loading && suggestions.length > 0 && (
-          <div>
-            <div className="results-head">
-              <span className="count">
-                {suggestions.length} suggestion{suggestions.length === 1 ? '' : 's'} for “{lastSeed}”
-                {selectableCount < suggestions.length &&
-                  ' · ' + (suggestions.length - selectableCount) + ' already tracked'}
-              </span>
-              <div className="spacer" />
-              <button className="btn-primary" onClick={promote} disabled={promoting || selected.size === 0}>
-                {promoting ? 'Adding…' : 'Add ' + selected.size + ' to keywords'}
-              </button>
+        <div className="chat">
+          <div className="panel">
+            <div className="chat-head">
+              <div className="chat-title">{title}</div>
+              <button className="btn-quiet" onClick={renameSession}>rename</button>
             </div>
 
-            {toast && <div className="toast">{toast}</div>}
+            <div className="stream" ref={streamRef}>
+              {messages.length === 0 && !loading && (
+                <div className="empty">
+                  Start a conversation. Try “Documentaries on the Rwandan genocide — what
+                  should I search?” then refine: “more obscure,” “focus on the filmmakers,”
+                  “anything in French.”<br/><br/>
+                  Picks you select get sent to the ledger's keyword list.
+                </div>
+              )}
 
-            {grouped.map(([cat, items]) => (
-              <div className="cat-group" key={cat}>
-                <div className="cat-head">{CATEGORY_LABEL[cat] || cat}</div>
-                {items.map((s, i) => {
-                  const isDupe = existing.has(norm(s.term));
-                  const isSel = selected.has(s.term);
-                  return (
-                    <div
-                      key={s.term + i}
-                      className={"sugg" + (isSel ? " selected" : "") + (isDupe ? " dupe" : "")}
-                      onClick={() => toggle(s.term)}
-                    >
-                      <div className="box">{isSel ? '✓' : ''}</div>
-                      <div>
-                        <div className="term">
-                          {s.term}
-                          {isDupe && <span className="dupe-tag">tracked</span>}
-                        </div>
-                        {s.rationale && <div className="why">{s.rationale}</div>}
+              {messages.map((m, i) => {
+                const body = textOf(m.content);
+                const calls = m.role === 'assistant' ? keywordCalls(m.content) : [];
+                if (!body && calls.length === 0) return null;
+                return (
+                  <div key={i} className={"msg " + m.role}>
+                    <div className="who">{m.role === 'user' ? 'You' : 'Claude'}</div>
+                    {body && <div className="body">{body}</div>}
+                    {calls.map((list, ci) => (
+                      <div className="chips" key={ci}>
+                        <div className="chips-head">Suggested terms — tap to select</div>
+                        {list.map((k, ki) => {
+                          const dupe = existing.has(norm(k.term));
+                          const sel = selected.has(k.term);
+                          return (
+                            <div key={ki} className={"sugg" + (sel ? " selected" : "") + (dupe ? " dupe" : "")}
+                                 onClick={() => toggle(k.term)}>
+                              <div className="box">{sel ? '✓' : ''}</div>
+                              <div>
+                                <div className="term">
+                                  {k.term}
+                                  <span className="cat">{dupe ? 'tracked' : (CATEGORY_LABEL[k.category] || k.category)}</span>
+                                </div>
+                                {k.rationale && <div className="why">{k.rationale}</div>}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                );
+              })}
+
+              {loading && <div className="msg"><div className="who">Claude</div><div className="body" style={{color:'var(--ink-faded)'}}>Thinking…</div></div>}
+            </div>
+
+            {error && <div className="error-banner">{error}</div>}
+
+            {(selectableSelected.length > 0 || toast) && (
+              <div className="addbar">
+                {toast && <span className="toast">{toast}</span>}
+                {selectableSelected.length > 0 && <span>{selectableSelected.length} selected</span>}
+                <div className="spacer" />
+                {selectableSelected.length > 0 && (
+                  <button className="btn-primary" onClick={promote} disabled={promoting}>
+                    {promoting ? 'Adding…' : 'Add to keywords'}
+                  </button>
+                )}
               </div>
-            ))}
+            )}
+
+            <div className="composer">
+              <textarea
+                placeholder="Ask, refine, or steer the brainstorm…"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                rows={1}
+              />
+              <button className="btn-primary" onClick={send} disabled={loading || !input.trim()}>Send</button>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
