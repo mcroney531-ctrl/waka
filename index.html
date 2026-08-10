@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Documentary Acquisitions Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --paper:#EDE6D6;
+  --card:#F7F2E7;
+  --ink:#221F1A;
+  --ink-faded:#6B6558;
+  --green:#2F4538;
+  --red:#A13D2B;
+  --border:rgba(34,31,26,0.16);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:transparent;}
+body{
+  font-family:'Lora', serif;
+  color:var(--ink);
+  background:var(--paper);
+}
+#root{
+  min-height:100%;
+  background:var(--paper);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px);
+  background-size: 100% 44px;
+  padding: 28px 20px 60px;
+}
+
+.wrap{ max-width: 860px; margin: 0 auto; }
+
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--ink-faded);
+  margin:0 0 4px;
+}
+h1{
+  font-family:'Special Elite', monospace;
+  font-weight:400;
+  font-size:26px;
+  margin:0 0 14px;
+  letter-spacing:0.01em;
+}
+
+.tally{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 22px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color:var(--ink-faded);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:10px 2px;
+  margin-bottom:22px;
+}
+.tally b{ color:var(--ink); font-weight:600; }
+
+.tabs{ display:flex; gap:6px; margin-bottom:0; }
+.tab{
+  font-family:'Special Elite', monospace;
+  font-size:13px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  padding:9px 18px 8px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-bottom:none;
+  border-radius:6px 6px 0 0;
+  cursor:pointer;
+  color:var(--ink-faded);
+  position:relative;
+  top:1px;
+}
+.tab.active{
+  color:var(--ink);
+  background:var(--paper);
+  border-bottom:1px solid var(--paper);
+}
+.panel{
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:0 6px 6px 6px;
+  padding:18px 18px 8px;
+}
+
+.toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin-bottom:16px;
+}
+select, input[type=text], input[type=number], input[type=date], textarea{
+  font-family:'Lora', serif;
+  font-size:13px;
+  color:var(--ink);
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:7px 9px;
+}
+textarea{ font-family:'Lora', serif; resize:vertical; min-height:44px; width:100%; }
+label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--ink-faded);
+  display:block;
+  margin-bottom:4px;
+}
+.field{ margin-bottom:12px; }
+.field-row{ display:flex; gap:12px; flex-wrap:wrap; }
+.field-row .field{ flex:1; min-width:150px; }
+
+button{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  letter-spacing:0.03em;
+  cursor:pointer;
+  border-radius:4px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--ink);
+  padding:8px 14px;
+}
+button:hover:not(:disabled){ border-color:var(--ink); }
+button:disabled{ opacity:0.5; cursor:default; }
+.btn-primary{ background:var(--green); color:var(--card); border-color:var(--green); }
+.btn-primary:hover:not(:disabled){ filter:brightness(1.08); }
+.btn-quiet{ background:transparent; border-color:transparent; color:var(--ink-faded); padding:6px 8px; }
+.btn-quiet:hover:not(:disabled){ color:var(--ink); border-color:transparent; }
+.btn-icon{ font-family:'Lora', serif; font-size:15px; padding:6px 10px; }
+
+.add-panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:16px;
+  margin-bottom:18px;
+}
+.add-panel h3{
+  font-family:'Special Elite', monospace;
+  font-weight:400;
+  font-size:14px;
+  margin:0 0 12px;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+.add-actions{ display:flex; gap:10px; margin-top:6px; }
+
+.ledger-row{
+  border-bottom:1px solid var(--border);
+  padding:14px 4px;
+  animation: fadeInUp 0.25s ease both;
+}
+.ledger-row:last-child{ border-bottom:none; }
+.ledger-row-main{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  cursor:pointer;
+}
+.ledger-row-title{
+  font-family:'Lora', serif;
+  font-weight:600;
+  font-size:15.5px;
+}
+.ledger-row-title .year{ font-weight:400; color:var(--ink-faded); }
+.ledger-row-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  align-items:center;
+  margin-top:6px;
+}
+.mono{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faded); }
+.route-tag{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10.5px;
+  padding:2px 7px;
+  border-radius:2px;
+  border:1px solid var(--border);
+  color:var(--ink-faded);
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.route-UMD{ border-color:var(--green); color:var(--green); }
+.route-ILL{ border-color:var(--red); color:var(--red); }
+
+.row-right{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+
+.stamp{
+  display:inline-block;
+  font-family:'Special Elite', monospace;
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+  font-size:10.5px;
+  padding:4px 9px;
+  border:2px solid var(--stamp-color);
+  color:var(--stamp-color);
+  border-radius:3px;
+  transform:rotate(-4deg);
+  white-space:nowrap;
+}
+.stamp-faint{ opacity:0.55; border-style:dashed; }
+
+.quick-link{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10.5px;
+  text-decoration:underline;
+  color:var(--ink-faded);
+  cursor:pointer;
+  background:none;
+  border:none;
+  padding:2px;
+}
+.quick-link:hover{ color:var(--ink); }
+
+.edit-panel{
+  margin-top:14px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:14px;
+}
+
+.kw-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+  padding:11px 4px;
+  animation: fadeInUp 0.25s ease both;
+}
+.kw-row:last-child{ border-bottom:none; }
+.kw-term{ font-family:'Lora', serif; font-size:14.5px; }
+.kw-meta{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-faded); margin-top:3px; }
+.chip{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:3px 10px;
+  cursor:pointer;
+  background:transparent;
+  color:var(--ink-faded);
+}
+.chip.searched{ border-color:var(--green); color:var(--green); }
+
+.quick-add{ display:flex; gap:8px; margin-bottom:16px; }
+.quick-add input{ flex:1; }
+
+.state-msg{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color:var(--ink-faded);
+  padding:24px 4px;
+  text-align:center;
+}
+.error-banner{
+  background:var(--card);
+  border:1px solid var(--red);
+  color:var(--red);
+  border-radius:6px;
+  padding:11px 14px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  margin-bottom:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+@keyframes fadeInUp{
+  from{ opacity:0; transform:translateY(4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+@media (max-width: 560px){
+  h1{ font-size:21px; }
+  .ledger-row-main{ flex-direction:column; }
+  .row-right{ align-self:flex-start; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ---------------------------------------------------------------------------
+// Supabase connection.
+// Both values below are meant to live in client-side source — the project URL
+// is public, and the publishable key is anon-scoped and constrained by the RLS
+// policies on the arch_titles / arch_keywords tables (see README "Security
+// posture"). This is NOT a secret; do not treat it like one.
+// ---------------------------------------------------------------------------
+const SUPABASE_URL = 'https://fdbkdsracxomwyytfgob.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_w5izyYtgIXD-pQvjlkn4jg_DtGJq_7j';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ROUTES = ['undetermined', 'UMD', 'ILL'];
+const STATUSES = ['not_requested', 'requested', 'fulfilled', 'unavailable'];
+const STATUS_LABEL = {
+  not_requested: 'Not requested',
+  requested: 'Requested',
+  fulfilled: 'Fulfilled',
+  unavailable: 'Unavailable'
+};
+const STAMP_CFG = {
+  not_requested: { label: 'To request', color: 'var(--ink-faded)', faint: true },
+  requested: { label: 'Requested', color: 'var(--green)' },
+  fulfilled: { label: 'In hand', color: 'var(--green)' },
+  unavailable: { label: 'Unavailable', color: 'var(--red)' }
+};
+
+function StatusStamp({ status }) {
+  const cfg = STAMP_CFG[status] || STAMP_CFG.not_requested;
+  return (
+    <span className={"stamp" + (cfg.faint ? " stamp-faint" : "")} style={{ '--stamp-color': cfg.color }}>
+      {cfg.label}
+    </span>
+  );
+}
+
+function TextField({ label, value, onChange, placeholder, type }) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <input
+        type={type || 'text'}
+        value={value || ''}
+        placeholder={placeholder || ''}
+        onChange={e => onChange(e.target.value)}
+        style={{ width: '100%' }}
+      />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options, display }) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%' }}>
+        {options.map(o => <option key={o} value={o}>{display ? display(o) : o}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function emptyTitleForm() {
+  return { title: '', year: '', worldcat_number: '', keywords: '', route: 'undetermined',
+    call_number: '', holding_library: '', item_number: '', notes: '' };
+}
+
+function AddTitleForm({ onCancel, onSave, saving }) {
+  const [form, setForm] = useState(emptyTitleForm());
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = () => {
+    if (!form.title.trim()) return;
+    const payload = {};
+    Object.keys(form).forEach(k => {
+      if (form[k] !== '' && form[k] !== null) {
+        payload[k] = k === 'year' ? parseInt(form[k], 10) : form[k];
+      }
+    });
+    onSave(payload);
+  };
+
+  return (
+    <div className="add-panel">
+      <h3>New title</h3>
+      <div className="field-row">
+        <TextField label="Title" value={form.title} onChange={v => set('title', v)} placeholder="Cry Freedom" />
+        <div className="field" style={{ maxWidth: 110 }}>
+          <label>Year</label>
+          <input type="number" value={form.year} onChange={e => set('year', e.target.value)} style={{ width: '100%' }} />
+        </div>
+      </div>
+      <div className="field-row">
+        <TextField label="WorldCat / OCLC #" value={form.worldcat_number} onChange={v => set('worldcat_number', v)} />
+        <TextField label="Keyword(s) that surfaced it" value={form.keywords} onChange={v => set('keywords', v)} />
+      </div>
+      <div className="field-row">
+        <SelectField label="Route" value={form.route} onChange={v => set('route', v)} options={ROUTES} />
+        <TextField label="Call number" value={form.call_number} onChange={v => set('call_number', v)} />
+      </div>
+      <div className="field-row">
+        <TextField label="Holding library (ILL)" value={form.holding_library} onChange={v => set('holding_library', v)} />
+        <TextField label="Item number (ILL)" value={form.item_number} onChange={v => set('item_number', v)} />
+      </div>
+      <div className="field">
+        <label>Notes</label>
+        <textarea value={form.notes} onChange={e => set('notes', e.target.value)} />
+      </div>
+      <div className="add-actions">
+        <button className="btn-primary" onClick={submit} disabled={saving || !form.title.trim()}>
+          {saving ? 'Adding…' : 'Add to ledger'}
+        </button>
+        <button className="btn-quiet" onClick={onCancel} disabled={saving}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function EditTitleForm({ t, onSave, onClose }) {
+  const [form, setForm] = useState({
+    route: t.route || 'undetermined',
+    status: t.status || 'not_requested',
+    call_number: t.call_number || '',
+    holding_library: t.holding_library || '',
+    item_number: t.item_number || '',
+    date_requested: t.date_requested || '',
+    date_fulfilled: t.date_fulfilled || '',
+    notes: t.notes || ''
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    setSaving(true);
+    const payload = {};
+    Object.keys(form).forEach(k => { payload[k] = form[k] === '' ? null : form[k]; });
+    await onSave(t.id, payload);
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div className="edit-panel" onClick={e => e.stopPropagation()}>
+      <div className="field-row">
+        <SelectField label="Route" value={form.route} onChange={v => set('route', v)} options={ROUTES} />
+        <SelectField label="Status" value={form.status} onChange={v => set('status', v)} options={STATUSES} display={s => STATUS_LABEL[s]} />
+      </div>
+      <div className="field-row">
+        <TextField label="Call number" value={form.call_number} onChange={v => set('call_number', v)} />
+        <TextField label="Holding library (ILL)" value={form.holding_library} onChange={v => set('holding_library', v)} />
+      </div>
+      <div className="field-row">
+        <TextField label="Item number (ILL)" value={form.item_number} onChange={v => set('item_number', v)} />
+        <div className="field" style={{ flex: 1, minWidth: 150 }}>
+          <label>Date requested</label>
+          <input type="date" value={form.date_requested || ''} onChange={e => set('date_requested', e.target.value)} style={{ width: '100%' }} />
+        </div>
+        <div className="field" style={{ flex: 1, minWidth: 150 }}>
+          <label>Date fulfilled</label>
+          <input type="date" value={form.date_fulfilled || ''} onChange={e => set('date_fulfilled', e.target.value)} style={{ width: '100%' }} />
+        </div>
+      </div>
+      <div className="field">
+        <label>Notes</label>
+        <textarea value={form.notes} onChange={e => set('notes', e.target.value)} />
+      </div>
+      <div className="add-actions">
+        <button className="btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+        <button className="btn-quiet" onClick={onClose} disabled={saving}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+function TitleRow({ t, editingId, setEditingId, onSave, onQuickRequest }) {
+  const isEditing = editingId === t.id;
+  return (
+    <div className="ledger-row">
+      <div className="ledger-row-main" onClick={() => setEditingId(isEditing ? null : t.id)}>
+        <div>
+          <div className="ledger-row-title">
+            {t.title}{t.year ? <span className="year"> ({t.year})</span> : null}
+          </div>
+          <div className="ledger-row-meta">
+            {t.worldcat_number && <span className="mono">WorldCat {t.worldcat_number}</span>}
+            <span className={"route-tag route-" + t.route}>{t.route}</span>
+            {t.call_number && <span className="mono">{t.call_number}</span>}
+            {t.keywords && <span className="mono">via "{t.keywords}"</span>}
+          </div>
+        </div>
+        <div className="row-right">
+          {t.status === 'not_requested' && (
+            <button className="quick-link" onClick={e => { e.stopPropagation(); onQuickRequest(t.id); }}>
+              mark requested
+            </button>
+          )}
+          <StatusStamp status={t.status} />
+        </div>
+      </div>
+      {isEditing && <EditTitleForm t={t} onSave={onSave} onClose={() => setEditingId(null)} />}
+    </div>
+  );
+}
+
+function TitlesPanel({ titles, loading, error, onRetry, onAdd, onUpdate, savingTitle, showAdd, setShowAdd }) {
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [routeFilter, setRouteFilter] = useState('all');
+  const [editingId, setEditingId] = useState(null);
+
+  const filtered = titles.filter(t =>
+    (statusFilter === 'all' || t.status === statusFilter) &&
+    (routeFilter === 'all' || t.route === routeFilter)
+  );
+
+  const quickRequest = (id) => onUpdate(id, { status: 'requested', date_requested: new Date().toISOString().slice(0,10) });
+
+  return (
+    <div>
+      <div className="toolbar">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="all">All statuses</option>
+          {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+        </select>
+        <select value={routeFilter} onChange={e => setRouteFilter(e.target.value)}>
+          <option value="all">All routes</option>
+          {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <button className="btn-icon" onClick={onRetry} title="Refresh">⟳</button>
+        <div style={{ flex: 1 }} />
+        {!showAdd && <button className="btn-primary" onClick={() => setShowAdd(true)}>+ New title</button>}
+      </div>
+
+      {showAdd && <AddTitleForm saving={savingTitle} onCancel={() => setShowAdd(false)} onSave={onAdd} />}
+
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button className="btn-quiet" onClick={onRetry}>Try again</button>
+        </div>
+      )}
+
+      {loading && <div className="state-msg">Reading the ledger…</div>}
+
+      {!loading && !error && filtered.length === 0 && titles.length === 0 && (
+        <div className="state-msg">No titles logged yet. Start the ledger by adding the first one.</div>
+      )}
+      {!loading && !error && filtered.length === 0 && titles.length > 0 && (
+        <div className="state-msg">Nothing matches this filter.</div>
+      )}
+
+      {!loading && filtered.map(t => (
+        <TitleRow key={t.id} t={t} editingId={editingId} setEditingId={setEditingId} onSave={onUpdate} onQuickRequest={quickRequest} />
+      ))}
+    </div>
+  );
+}
+
+function KeywordsPanel({ items, loading, error, onRetry, onAdd, onToggle }) {
+  const [term, setTerm] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const submit = async () => {
+    if (!term.trim()) return;
+    setAdding(true);
+    await onAdd(term.trim());
+    setTerm('');
+    setAdding(false);
+  };
+
+  return (
+    <div>
+      <div className="quick-add">
+        <input
+          type="text"
+          placeholder="Add a keyword — e.g. Tutsi"
+          value={term}
+          onChange={e => setTerm(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+        />
+        <button className="btn-primary" onClick={submit} disabled={adding || !term.trim()}>
+          {adding ? 'Adding…' : 'Add'}
+        </button>
+        <button className="btn-icon" onClick={onRetry} title="Refresh">⟳</button>
+      </div>
+
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button className="btn-quiet" onClick={onRetry}>Try again</button>
+        </div>
+      )}
+
+      {loading && <div className="state-msg">Reading the keyword list…</div>}
+
+      {!loading && !error && items.length === 0 && (
+        <div className="state-msg">No keywords yet. Add the first one to start seeding searches.</div>
+      )}
+
+      {!loading && items.map(k => (
+        <div className="kw-row" key={k.id}>
+          <div>
+            <div className="kw-term">{k.term}</div>
+            {k.source && <div className="kw-meta">from: {k.source}</div>}
+          </div>
+          <button
+            className={"chip" + (k.status === 'searched' ? " searched" : "")}
+            onClick={() => onToggle(k.id, k.status)}
+          >
+            {k.status === 'searched' ? 'Searched' : 'Unsearched'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab] = useState('titles');
+  const [titles, setTitles] = useState([]);
+  const [keywordItems, setKeywordItems] = useState([]);
+  const [loadingTitles, setLoadingTitles] = useState(true);
+  const [loadingKeywords, setLoadingKeywords] = useState(true);
+  const [titlesError, setTitlesError] = useState(null);
+  const [keywordsError, setKeywordsError] = useState(null);
+  const [showAddTitle, setShowAddTitle] = useState(false);
+  const [savingTitle, setSavingTitle] = useState(false);
+
+  const fetchTitles = async () => {
+    setLoadingTitles(true); setTitlesError(null);
+    try {
+      const { data, error } = await sb
+        .from('arch_titles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setTitles(data || []);
+    } catch (e) { setTitlesError("Couldn't read the ledger — " + e.message); }
+    finally { setLoadingTitles(false); }
+  };
+
+  const fetchKeywords = async () => {
+    setLoadingKeywords(true); setKeywordsError(null);
+    try {
+      const { data, error } = await sb
+        .from('arch_keywords')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setKeywordItems(data || []);
+    } catch (e) { setKeywordsError("Couldn't read the keyword list — " + e.message); }
+    finally { setLoadingKeywords(false); }
+  };
+
+  useEffect(() => { fetchTitles(); fetchKeywords(); }, []);
+
+  const addTitle = async (payload) => {
+    setSavingTitle(true); setTitlesError(null);
+    try {
+      const { error } = await sb.from('arch_titles').insert(payload);
+      if (error) throw error;
+      setShowAddTitle(false);
+      await fetchTitles();
+    } catch (e) { setTitlesError("Add didn't go through — " + e.message); }
+    finally { setSavingTitle(false); }
+  };
+
+  const updateTitle = async (id, changes) => {
+    setTitlesError(null);
+    try {
+      const { error } = await sb.from('arch_titles').update(changes).eq('id', id);
+      if (error) throw error;
+      await fetchTitles();
+    } catch (e) { setTitlesError("Update didn't go through — " + e.message); }
+  };
+
+  const addKeyword = async (termValue) => {
+    setKeywordsError(null);
+    try {
+      const { error } = await sb.from('arch_keywords').insert({ term: termValue, status: 'unsearched' });
+      if (error) throw error;
+      await fetchKeywords();
+    } catch (e) { setKeywordsError("Add didn't go through — " + e.message); }
+  };
+
+  const toggleKeyword = async (id, currentStatus) => {
+    setKeywordsError(null);
+    const next = currentStatus === 'searched' ? 'unsearched' : 'searched';
+    try {
+      const { error } = await sb.from('arch_keywords').update({ status: next }).eq('id', id);
+      if (error) throw error;
+      await fetchKeywords();
+    } catch (e) { setKeywordsError("Update didn't go through — " + e.message); }
+  };
+
+  const counts = STATUSES.reduce((acc, s) => {
+    acc[s] = titles.filter(t => t.status === s).length;
+    return acc;
+  }, {});
+
+  return (
+    <div className="wrap">
+      <div className="eyebrow">Personal archive · acquisitions pipeline</div>
+      <h1>Documentary Acquisitions Ledger</h1>
+      <div className="tally">
+        <span><b>{counts.not_requested || 0}</b> to request</span>
+        <span><b>{counts.requested || 0}</b> requested</span>
+        <span><b>{counts.fulfilled || 0}</b> in hand</span>
+        <span><b>{counts.unavailable || 0}</b> unavailable</span>
+        <span><b>{keywordItems.length}</b> keywords tracked</span>
+      </div>
+
+      <div className="tabs">
+        <div className={"tab" + (tab === 'titles' ? ' active' : '')} onClick={() => setTab('titles')}>Titles</div>
+        <div className={"tab" + (tab === 'keywords' ? ' active' : '')} onClick={() => setTab('keywords')}>Keywords</div>
+      </div>
+
+      <div className="panel">
+        {tab === 'titles' ? (
+          <TitlesPanel
+            titles={titles}
+            loading={loadingTitles}
+            error={titlesError}
+            onRetry={fetchTitles}
+            onAdd={addTitle}
+            onUpdate={updateTitle}
+            savingTitle={savingTitle}
+            showAdd={showAddTitle}
+            setShowAdd={setShowAddTitle}
+          />
+        ) : (
+          <KeywordsPanel
+            items={keywordItems}
+            loading={loadingKeywords}
+            error={keywordsError}
+            onRetry={fetchKeywords}
+            onAdd={addKeyword}
+            onToggle={toggleKeyword}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
