@@ -41,7 +41,9 @@ two `arch_` tables are touched.
   ILL fields, dates, and notes. `keywords` is **deliberately free text**
   (whatever term surfaced the title), not a foreign key into `arch_keywords` —
   a conscious simplification for a solo tracker, not an oversight.
-- `arch_keywords` — search terms with an `unsearched` / `searched` status.
+- `arch_keywords` — search terms with an `unsearched` / `searched` status. Each
+  term links straight to a WorldCat search for it, and the list sorts by
+  newest/oldest/A–Z/Z–A.
 - `arch_brainstorms` — saved brainstorm conversations (added with the chat
   module). See "Keyword brainstorm" below.
 

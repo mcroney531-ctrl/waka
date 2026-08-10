@@ -300,6 +300,11 @@ button:disabled{ opacity:0.5; cursor:default; }
 }
 .kw-row:last-child{ border-bottom:none; }
 .kw-term{ font-family:'Lora', serif; font-size:14.5px; }
+a.kw-term{ color:var(--ink); text-decoration:none; cursor:pointer; }
+a.kw-term:hover{ text-decoration:underline; }
+.kw-ext{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-faded); margin-left:5px; }
+.kw-toolbar{ display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:12px; }
+.kw-sortlabel{ font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-faded); }
 .kw-meta{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-faded); margin-top:3px; }
 .chip{
   font-family:'IBM Plex Mono', monospace;
@@ -376,6 +381,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ROUTES = ['undetermined', 'UMD', 'ILL'];
 const FORMATS = ['', 'VHS', 'DVD', 'Other'];
+const WORLDCAT_SEARCH = (term) =>
+  'https://umaryland.on.worldcat.org/search?queryString=' + encodeURIComponent(term);
 const STATUSES = ['not_requested', 'requested', 'fulfilled', 'unavailable'];
 const STATUS_LABEL = {
   not_requested: 'Not requested',
@@ -646,6 +653,7 @@ function TitlesPanel({ titles, loading, error, onRetry, onAdd, onUpdate, savingT
 function KeywordsPanel({ items, loading, error, onRetry, onAdd, onToggle }) {
   const [term, setTerm] = useState('');
   const [adding, setAdding] = useState(false);
+  const [sort, setSort] = useState('new');
 
   const submit = async () => {
     if (!term.trim()) return;
@@ -654,6 +662,14 @@ function KeywordsPanel({ items, loading, error, onRetry, onAdd, onToggle }) {
     setTerm('');
     setAdding(false);
   };
+
+  const sorted = items.slice().sort((a, b) => {
+    if (sort === 'az') return a.term.localeCompare(b.term, undefined, { sensitivity: 'base' });
+    if (sort === 'za') return b.term.localeCompare(a.term, undefined, { sensitivity: 'base' });
+    const at = a.created_at || '', bt = b.created_at || '';
+    if (sort === 'old') return at < bt ? -1 : at > bt ? 1 : 0;
+    return at > bt ? -1 : at < bt ? 1 : 0; // 'new' (newest first)
+  });
 
   return (
     <div>
@@ -684,10 +700,25 @@ function KeywordsPanel({ items, loading, error, onRetry, onAdd, onToggle }) {
         <div className="state-msg">No keywords yet. Add the first one to start seeding searches.</div>
       )}
 
-      {!loading && items.map(k => (
+      {!loading && items.length > 0 && (
+        <div className="kw-toolbar">
+          <span className="kw-sortlabel">Sort</span>
+          <select value={sort} onChange={e => setSort(e.target.value)}>
+            <option value="new">Newest first</option>
+            <option value="old">Oldest first</option>
+            <option value="az">A–Z</option>
+            <option value="za">Z–A</option>
+          </select>
+        </div>
+      )}
+
+      {!loading && sorted.map(k => (
         <div className="kw-row" key={k.id}>
           <div>
-            <div className="kw-term">{k.term}</div>
+            <a className="kw-term" href={WORLDCAT_SEARCH(k.term)} target="_blank" rel="noopener"
+               title={"Search WorldCat for \"" + k.term + "\""}>
+              {k.term}<span className="kw-ext">↗</span>
+            </a>
             {k.source && <div className="kw-meta">from: {k.source}</div>}
           </div>
           <button
