@@ -124,6 +124,21 @@ cents per brainstorm, billed to that key.
 To redeploy the function after editing it: `supabase functions deploy
 brainstorm-keywords --project-ref fdbkdsracxomwyytfgob` (or via the dashboard).
 
+## Install on your phone (PWA)
+
+The ledger is an installable web app: `manifest.webmanifest`, an archive-ledger
+icon (`icons/`), and a small `sw.js` service worker. On the live (HTTPS) Pages
+URL, use the browser's **Add to Home Screen** (iOS Safari share sheet, or
+Android Chrome menu) and it launches full-screen with the icon, no browser
+chrome. The service worker is deliberately conservative — app pages are
+network-first (a deploy is never stuck behind a stale cache) and Supabase
+traffic is never cached — so "installed" mostly means home-screen + standalone,
+with the shell still loading offline. Service workers only run over HTTPS (or
+localhost), so this activates on the Pages URL, not on a `file://` open.
+
+The ledger header also has a **WorldCat ↗** link to the UMD discovery catalog
+(`umaryland.on.worldcat.org/discovery`) for quick access while working the list.
+
 ## Deploying to GitHub Pages
 
 `index.html` is at the repo root, so Pages can serve it as-is:

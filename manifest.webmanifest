@@ -1,0 +1,14 @@
+{
+  "name": "Documentary Acquisitions Ledger",
+  "short_name": "Ledger",
+  "description": "Sourcing and tracking rare geopolitical documentaries.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#EDE6D6",
+  "theme_color": "#2F4538",
+  "icons": [
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
