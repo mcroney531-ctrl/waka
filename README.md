@@ -36,9 +36,11 @@ two `arch_` tables are touched.
 
 ### Tables (already live in Supabase)
 
-- `arch_titles` — the ledger. `keywords` is **deliberately free text** (whatever
-  term surfaced the title), not a foreign key into `arch_keywords`. That's a
-  conscious simplification for a solo tracker, not an oversight.
+- `arch_titles` — the ledger. Clicking a title opens a detail **modal** with
+  route, status, format (VHS/DVD/Other), maker, ISBN, location(s), call number,
+  ILL fields, dates, and notes. `keywords` is **deliberately free text**
+  (whatever term surfaced the title), not a foreign key into `arch_keywords` —
+  a conscious simplification for a solo tracker, not an oversight.
 - `arch_keywords` — search terms with an `unsearched` / `searched` status.
 - `arch_brainstorms` — saved brainstorm conversations (added with the chat
   module). See "Keyword brainstorm" below.
