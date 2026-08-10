@@ -44,6 +44,18 @@ body{
   color:var(--ink-faded);
   margin:0 0 4px;
 }
+.topbar{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.nav-link{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--ink-faded);
+  text-decoration:none;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+.nav-link:hover{ color:var(--ink); border-color:var(--ink); }
 h1{
   font-family:'Special Elite', monospace;
   font-weight:400;
@@ -711,7 +723,10 @@ function App() {
 
   return (
     <div className="wrap">
-      <div className="eyebrow">Personal archive · acquisitions pipeline</div>
+      <div className="topbar">
+        <div className="eyebrow">Personal archive · acquisitions pipeline</div>
+        <a className="nav-link" href="./brainstorm.html">Keyword brainstorm →</a>
+      </div>
       <h1>Documentary Acquisitions Ledger</h1>
       <div className="tally">
         <span><b>{counts.not_requested || 0}</b> to request</span>

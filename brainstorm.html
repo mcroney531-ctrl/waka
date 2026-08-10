@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Keyword Brainstorm · Documentary Acquisitions Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --paper:#EDE6D6;
+  --card:#F7F2E7;
+  --ink:#221F1A;
+  --ink-faded:#6B6558;
+  --green:#2F4538;
+  --red:#A13D2B;
+  --border:rgba(34,31,26,0.16);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:transparent;}
+body{
+  font-family:'Lora', serif;
+  color:var(--ink);
+  background:var(--paper);
+}
+#root{
+  min-height:100%;
+  background:var(--paper);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px);
+  background-size: 100% 44px;
+  padding: 28px 20px 60px;
+}
+
+.wrap{ max-width: 860px; margin: 0 auto; }
+
+.topbar{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--ink-faded);
+  margin:0 0 4px;
+}
+.nav-link{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--ink-faded);
+  text-decoration:none;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+.nav-link:hover{ color:var(--ink); border-color:var(--ink); }
+h1{
+  font-family:'Special Elite', monospace;
+  font-weight:400;
+  font-size:26px;
+  margin:0 0 10px;
+  letter-spacing:0.01em;
+}
+.lede{
+  font-size:14px;
+  color:var(--ink-faded);
+  margin:0 0 20px;
+  max-width:64ch;
+  line-height:1.5;
+}
+
+.panel{
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:18px;
+}
+
+input[type=text], textarea{
+  font-family:'Lora', serif;
+  font-size:14px;
+  color:var(--ink);
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:9px 11px;
+}
+
+button{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  letter-spacing:0.03em;
+  cursor:pointer;
+  border-radius:4px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--ink);
+  padding:9px 16px;
+}
+button:hover:not(:disabled){ border-color:var(--ink); }
+button:disabled{ opacity:0.5; cursor:default; }
+.btn-primary{ background:var(--green); color:var(--card); border-color:var(--green); }
+.btn-primary:hover:not(:disabled){ filter:brightness(1.08); }
+
+.seed-row{ display:flex; gap:10px; margin-bottom:8px; }
+.seed-row input{ flex:1; }
+.hint{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-faded); }
+
+.state-msg{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color:var(--ink-faded);
+  padding:24px 4px;
+  text-align:center;
+}
+.error-banner{
+  background:var(--card);
+  border:1px solid var(--red);
+  color:var(--red);
+  border-radius:6px;
+  padding:11px 14px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  margin:16px 0 0;
+}
+
+.results-head{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 16px;
+  align-items:center;
+  border-top:1px solid var(--border);
+  margin-top:20px;
+  padding-top:16px;
+}
+.results-head .count{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faded); }
+.results-head .spacer{ flex:1; }
+
+.cat-group{ margin-top:18px; }
+.cat-head{
+  font-family:'Special Elite', monospace;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--ink-faded);
+  margin:0 0 8px;
+  padding-bottom:4px;
+  border-bottom:1px dashed var(--border);
+}
+
+.sugg{
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  padding:9px 6px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  animation: fadeInUp 0.2s ease both;
+}
+.sugg:last-child{ border-bottom:none; }
+.sugg .box{
+  flex-shrink:0;
+  width:16px; height:16px;
+  margin-top:2px;
+  border:1.5px solid var(--ink-faded);
+  border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px; line-height:1;
+  color:var(--card);
+}
+.sugg.selected .box{ background:var(--green); border-color:var(--green); }
+.sugg .term{ font-family:'Lora', serif; font-weight:600; font-size:14.5px; }
+.sugg .why{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-faded); margin-top:2px; }
+.sugg.dupe{ cursor:default; opacity:0.55; }
+.sugg.dupe .box{ border-style:dashed; }
+.dupe-tag{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:9.5px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--ink-faded);
+  border:1px solid var(--border);
+  border-radius:2px;
+  padding:1px 5px;
+  margin-left:8px;
+  vertical-align:middle;
+}
+
+.toast{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color:var(--green);
+  margin-top:14px;
+}
+
+@keyframes fadeInUp{
+  from{ opacity:0; transform:translateY(4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+@media (max-width: 560px){
+  h1{ font-size:21px; }
+  .seed-row{ flex-direction:column; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// Same public Supabase credentials as the ledger — safe to expose client-side.
+const SUPABASE_URL = 'https://fdbkdsracxomwyytfgob.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_w5izyYtgIXD-pQvjlkn4jg_DtGJq_7j';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const CATEGORY_ORDER = ['person', 'place', 'event', 'organization', 'alias', 'topic'];
+const CATEGORY_LABEL = {
+  person: 'People', place: 'Places', event: 'Events',
+  organization: 'Organizations', alias: 'Aliases & other names', topic: 'Adjacent topics'
+};
+
+const norm = (s) => (s || '').trim().toLowerCase();
+
+function App() {
+  const [seed, setSeed] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [lastSeed, setLastSeed] = useState('');
+  const [selected, setSelected] = useState(() => new Set());
+  const [existing, setExisting] = useState(() => new Set()); // normalized terms already in arch_keywords
+  const [promoting, setPromoting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const loadExisting = async () => {
+    try {
+      const { data, error } = await sb.from('arch_keywords').select('term');
+      if (error) throw error;
+      setExisting(new Set((data || []).map(r => norm(r.term))));
+    } catch (e) {
+      // Non-fatal — brainstorming still works, dedup just won't be pre-marked.
+      console.warn('Could not load existing keywords:', e.message);
+    }
+  };
+
+  useEffect(() => { loadExisting(); }, []);
+
+  const brainstorm = async () => {
+    const s = seed.trim();
+    if (!s) return;
+    setLoading(true); setError(null); setToast(null); setSuggestions([]); setSelected(new Set());
+    try {
+      const { data, error } = await sb.functions.invoke('brainstorm-keywords', {
+        body: { seed: s, existing: Array.from(existing) }
+      });
+      if (error) {
+        let msg = error.message;
+        try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (_) {}
+        throw new Error(msg);
+      }
+      const list = (data && Array.isArray(data.keywords)) ? data.keywords : [];
+      if (!list.length) throw new Error('The model came back empty — try a more specific seed.');
+      setSuggestions(list);
+      setLastSeed(s);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = (term) => {
+    if (existing.has(norm(term))) return; // already tracked; can't select
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(term)) next.delete(term); else next.add(term);
+      return next;
+    });
+  };
+
+  const promote = async () => {
+    const picks = Array.from(selected).filter(t => !existing.has(norm(t)));
+    if (!picks.length) return;
+    setPromoting(true); setError(null); setToast(null);
+    try {
+      const rows = picks.map(term => ({
+        term,
+        source: 'brainstorm: ' + lastSeed,
+        status: 'unsearched'
+      }));
+      const { error } = await sb.from('arch_keywords').insert(rows);
+      if (error) throw error;
+      setToast('Added ' + picks.length + ' keyword' + (picks.length === 1 ? '' : 's') + ' to the tracker.');
+      setSelected(new Set());
+      await loadExisting();
+    } catch (e) {
+      setError("Couldn't add those — " + e.message);
+    } finally {
+      setPromoting(false);
+    }
+  };
+
+  const grouped = CATEGORY_ORDER
+    .map(cat => [cat, suggestions.filter(s => s.category === cat)])
+    .filter(([, items]) => items.length);
+  // any suggestions with an unexpected category fall into a trailing "Other" group
+  const known = new Set(CATEGORY_ORDER);
+  const other = suggestions.filter(s => !known.has(s.category));
+  if (other.length) grouped.push(['other', other]);
+
+  const selectableCount = suggestions.filter(s => !existing.has(norm(s.term))).length;
+
+  return (
+    <div className="wrap">
+      <div className="topbar">
+        <div className="eyebrow">Personal archive · keyword workshop</div>
+        <a className="nav-link" href="./index.html">← Ledger</a>
+      </div>
+      <h1>Keyword Brainstorm</h1>
+      <p className="lede">
+        Give a topic and get search terms to try in WorldCat — people, places, events, organizations,
+        alternate names, and adjacent angles. Pick the ones worth chasing and send them to the ledger's
+        keyword list as <em>unsearched</em>.
+      </p>
+
+      <div className="panel">
+        <div className="seed-row">
+          <input
+            type="text"
+            placeholder="e.g. Rwandan genocide, Chilean coup 1973, apartheid resistance…"
+            value={seed}
+            onChange={e => setSeed(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') brainstorm(); }}
+          />
+          <button className="btn-primary" onClick={brainstorm} disabled={loading || !seed.trim()}>
+            {loading ? 'Thinking…' : 'Brainstorm'}
+          </button>
+        </div>
+        <div className="hint">Terms already in your tracker are shown dimmed and can't be re-added.</div>
+
+        {error && <div className="error-banner">{error}</div>}
+        {loading && <div className="state-msg">Consulting the index…</div>}
+
+        {!loading && suggestions.length > 0 && (
+          <div>
+            <div className="results-head">
+              <span className="count">
+                {suggestions.length} suggestion{suggestions.length === 1 ? '' : 's'} for “{lastSeed}”
+                {selectableCount < suggestions.length &&
+                  ' · ' + (suggestions.length - selectableCount) + ' already tracked'}
+              </span>
+              <div className="spacer" />
+              <button className="btn-primary" onClick={promote} disabled={promoting || selected.size === 0}>
+                {promoting ? 'Adding…' : 'Add ' + selected.size + ' to keywords'}
+              </button>
+            </div>
+
+            {toast && <div className="toast">{toast}</div>}
+
+            {grouped.map(([cat, items]) => (
+              <div className="cat-group" key={cat}>
+                <div className="cat-head">{CATEGORY_LABEL[cat] || cat}</div>
+                {items.map((s, i) => {
+                  const isDupe = existing.has(norm(s.term));
+                  const isSel = selected.has(s.term);
+                  return (
+                    <div
+                      key={s.term + i}
+                      className={"sugg" + (isSel ? " selected" : "") + (isDupe ? " dupe" : "")}
+                      onClick={() => toggle(s.term)}
+                    >
+                      <div className="box">{isSel ? '✓' : ''}</div>
+                      <div>
+                        <div className="term">
+                          {s.term}
+                          {isDupe && <span className="dupe-tag">tracked</span>}
+                        </div>
+                        {s.rationale && <div className="why">{s.rationale}</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

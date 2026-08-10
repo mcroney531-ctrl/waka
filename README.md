@@ -11,11 +11,14 @@ not extend into the downstream public archive/publish workflow.
 
 ## What this is
 
-- `index.html` — the entire app. React + Babel (in-browser) + `supabase-js`,
-  all from CDNs. No build step. Open it, or serve it, and it runs.
-- Two tabs: **Titles** (the acquisitions ledger) and **Keywords** (search
-  terms to seed WorldCat lookups), in an "archive ledger" / card-catalog visual
-  style (Special Elite / Lora / IBM Plex Mono, paper + stamp palette).
+- `index.html` — the tracker. React + Babel (in-browser) + `supabase-js`,
+  all from CDNs. No build step. Open it, or serve it, and it runs. Two tabs:
+  **Titles** (the acquisitions ledger) and **Keywords** (search terms to seed
+  WorldCat lookups).
+- `brainstorm.html` — an AI keyword-generation page (see "Keyword brainstorm"
+  below), linked from the ledger header.
+- Both share one "archive ledger" / card-catalog visual style (Special Elite /
+  Lora / IBM Plex Mono, paper + stamp palette).
 
 ## Data layer
 
@@ -70,6 +73,38 @@ Supabase Auth (magic link is enough for one user) and replace the open policies
 with `auth.uid()`-scoped ones. That is the real fix and it does not require
 rebuilding the UI. It was left out of this pass on purpose.
 
+## Keyword brainstorm (AI, `brainstorm.html`)
+
+A second page, linked from the ledger header. Enter a topic (e.g. "Rwandan
+genocide") and it generates 18–25 candidate WorldCat search terms — people,
+places, events, organizations, alternate/foreign names, and adjacent topics —
+each with a one-line rationale. Pick the useful ones and promote them into the
+tracker's `arch_keywords` table (`source` tagged `brainstorm: <topic>`, status
+`unsearched`). Terms already in the tracker are shown dimmed and can't be
+re-added.
+
+**How the AI stays secure on a static host.** The page cannot call the
+Anthropic API directly — that would expose a real API key in public page
+source. Instead it invokes a **Supabase Edge Function** (`brainstorm-keywords`,
+in `supabase/functions/`) which calls Anthropic **server-side**. The key lives
+only as a project secret; the browser never sees it. The function keeps
+`verify_jwt` on, so it's reachable only with the project's anon key — the same
+posture as the tables.
+
+**One-time setup — set the Anthropic key as a Supabase secret.** The function
+is deployed but returns a clear "key not set" message until you do this:
+
+- Supabase dashboard → **Project Settings → Edge Functions → Secrets** → add
+  `ANTHROPIC_API_KEY` = your Anthropic API key, **or**
+- CLI: `supabase secrets set ANTHROPIC_API_KEY=sk-ant-… --project-ref fdbkdsracxomwyytfgob`
+
+The key must be a real Anthropic **API** key (from console.anthropic.com), which
+is separate from a Claude.ai subscription. Model: `claude-opus-5`; cost is a few
+cents per brainstorm, billed to that key.
+
+To redeploy the function after editing it: `supabase functions deploy
+brainstorm-keywords --project-ref fdbkdsracxomwyytfgob` (or via the dashboard).
+
 ## Deploying to GitHub Pages
 
 `index.html` is at the repo root, so Pages can serve it as-is:
@@ -85,7 +120,7 @@ above.
 
 ## Explicitly out of scope
 
-- ILL email generator, keyword-brainstorm chat (separate modules)
+- ILL email generator (a separate module, not yet built)
 - Any authentication / multi-user support
 - Normalizing `keywords` into a foreign-key relationship
 - Tracking anything past `fulfilled` (archive/publish workflow)
