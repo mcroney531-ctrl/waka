@@ -129,10 +129,19 @@ brainstorm-keywords --project-ref fdbkdsracxomwyytfgob` (or via the dashboard).
 ## Install on your phone (PWA)
 
 The ledger is an installable web app: `manifest.webmanifest`, an archive-ledger
-icon (`icons/`), and a small `sw.js` service worker. On the live (HTTPS) Pages
-URL, use the browser's **Add to Home Screen** (iOS Safari share sheet, or
-Android Chrome menu) and it launches full-screen with the icon, no browser
-chrome. The service worker is deliberately conservative — app pages are
+icon set (`icons/`), and a small `sw.js` service worker. On the live (HTTPS)
+Pages URL, Android Chrome should offer **⋮ → Install app** (a real WebAPK, not a
+bookmark shortcut); iOS uses the Safari share sheet → **Add to Home Screen**. It
+launches full-screen with the icon, no browser chrome.
+
+**Icon requirements (so Android installs a real WebAPK, not a shortcut).** The
+manifest lists **separate** `any` and `maskable` entries at **both** 192×192 and
+512×512 — never a combined `"any maskable"` entry (that hits a Chrome WebAPK
+icon-resolution bug and silently falls back to a shortcut). The maskable PNGs
+pad the logo into the inner ~80% safe zone. All icons regenerate from
+`icons/icon.svg` via `sharp` (see the generator used in the commit history).
+Verify installability from Chrome DevTools → Application → Manifest, or by
+checking that the ⋮ menu says "Install app" — not "Add to Home screen". The service worker is deliberately conservative — app pages are
 network-first (a deploy is never stuck behind a stale cache) and Supabase
 traffic is never cached — so "installed" mostly means home-screen + standalone,
 with the shell still loading offline. Service workers only run over HTTPS (or
