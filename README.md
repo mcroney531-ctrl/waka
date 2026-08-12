@@ -138,8 +138,9 @@ launches full-screen with the icon, no browser chrome.
 manifest lists **separate** `any` and `maskable` entries at **both** 192×192 and
 512×512 — never a combined `"any maskable"` entry (that hits a Chrome WebAPK
 icon-resolution bug and silently falls back to a shortcut). The maskable PNGs
-pad the logo into the inner ~80% safe zone. All icons regenerate from
-`icons/icon.svg` via `sharp` (see the generator used in the commit history).
+pad the logo into the inner ~80% safe zone (art centered on black). All icons
+regenerate from `icons/icon-source.png` via `sharp` (see the generator used in
+the commit history).
 Verify installability from Chrome DevTools → Application → Manifest, or by
 checking that the ⋮ menu says "Install app" — not "Add to Home screen". The service worker is deliberately conservative — app pages are
 network-first (a deploy is never stuck behind a stale cache) and Supabase
