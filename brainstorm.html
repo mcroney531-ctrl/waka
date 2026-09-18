@@ -124,7 +124,7 @@ button:disabled{ opacity:0.5; cursor:default; }
 textarea{
   font-family:'Lora', serif; font-size:14px; color:var(--ink); background:var(--card);
   border:1px solid var(--border); border-radius:4px; padding:9px 11px;
-  flex:1; resize:none; min-height:42px; max-height:160px; line-height:1.4;
+  flex:1; resize:none; min-height:42px; max-height:160px; line-height:1.4; overflow-y:hidden;
 }
 .empty{
   font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faded);
@@ -200,6 +200,18 @@ function App() {
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
   const streamRef = useRef(null);
+  const taRef = useRef(null);
+  const TA_MAX = 160; // px cap; matches textarea max-height, then it scrolls
+
+  // Auto-grow the composer with its content, cap at TA_MAX and scroll past,
+  // and reset to the base height after send (which clears `input`).
+  const autoGrow = () => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, TA_MAX) + 'px';
+    el.style.overflowY = el.scrollHeight > TA_MAX ? 'auto' : 'hidden';
+  };
 
   const loadExisting = async () => {
     try {
@@ -222,6 +234,7 @@ function App() {
   useEffect(() => {
     if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight;
   }, [messages, loading]);
+  useEffect(() => { autoGrow(); }, [input]); // grow while typing; reset when input clears
 
   const newSession = () => {
     setCurrentId(null); setTitle('New brainstorm'); setMessages([]);
@@ -432,10 +445,16 @@ function App() {
 
             <div className="composer">
               <textarea
-                placeholder="Ask, refine, or steer the brainstorm…"
+                ref={taRef}
+                enterKeyHint="enter"
+                placeholder="Ask, refine, or steer the brainstorm…  (⌘/Ctrl+Enter to send)"
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                onKeyDown={e => {
+                  // Enter inserts a newline; sending is the button's job.
+                  // Keep Cmd/Ctrl+Enter as a desktop send shortcut.
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); }
+                }}
                 rows={1}
               />
               <button className="btn-primary" onClick={send} disabled={loading || !input.trim()}>Send</button>
