@@ -470,7 +470,7 @@ function AddTitleForm({ onCancel, onSave, saving }) {
     <div className="add-panel">
       <h3>New title</h3>
       <div className="field-row">
-        <TextField label="Title" value={form.title} onChange={v => set('title', v)} placeholder="Cry Freedom" />
+        <TextField label="Title" value={form.title} onChange={v => set('title', v)} placeholder={DEMO ? "The Civil War" : "Cry Freedom"} />
         <div className="field" style={{ maxWidth: 110 }}>
           <label>Year</label>
           <input type="number" value={form.year} onChange={e => set('year', e.target.value)} style={{ width: '100%' }} />
@@ -690,7 +690,7 @@ function KeywordsPanel({ items, loading, error, onRetry, onAdd, onToggle }) {
       <div className="quick-add">
         <input
           type="text"
-          placeholder="Add a keyword — e.g. Tutsi"
+          placeholder={DEMO ? "Add a keyword — e.g. Silk Road" : "Add a keyword — e.g. Tutsi"}
           value={term}
           onChange={e => setTerm(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') submit(); }}

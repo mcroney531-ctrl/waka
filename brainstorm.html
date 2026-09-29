@@ -398,9 +398,20 @@ function App() {
             <div className="stream" ref={streamRef}>
               {messages.length === 0 && !loading && (
                 <div className="empty">
-                  Start a conversation. Try “Documentaries on the Rwandan genocide — what
-                  should I search?” then refine: “more obscure,” “focus on the filmmakers,”
-                  “anything in French.”<br/><br/>
+                  {DEMO ? (
+                    <>
+                      Start a conversation. Try “Documentaries on the Panama Canal — what
+                      should I search?” then refine: “more obscure,” “focus on the filmmakers,”
+                      “anything from before 1990.”
+                    </>
+                  ) : (
+                    <>
+                      Start a conversation. Try “Documentaries on the Rwandan genocide — what
+                      should I search?” then refine: “more obscure,” “focus on the filmmakers,”
+                      “anything in French.”
+                    </>
+                  )}
+                  <br/><br/>
                   Picks you select get sent to the ledger's keyword list.
                 </div>
               )}
