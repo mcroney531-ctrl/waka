@@ -151,6 +151,32 @@ localhost), so this activates on the Pages URL, not on a `file://` open.
 The ledger header also has a **WorldCat ↗** link to the UMD discovery catalog
 (`umaryland.on.worldcat.org/discovery`) for quick access while working the list.
 
+## Demo mode (for screen recordings / showing the app)
+
+Open either page with `?demo=1` (e.g. `…/waka/index.html?demo=1`) and the app reads
+and writes a separate set of **sample-data** tables — `arch_demo_titles`,
+`arch_demo_keywords`, `arch_demo_brainstorms` — instead of the real ones. A small
+dashed **Sample data** tag appears in the header, and the Ledger ↔ Brainstorm links
+carry `?demo=1` across so you stay in demo mode. The saved-conversations sidebar
+is part of the switch, so real chat history never shows up in a demo.
+
+- **Fails closed:** every query goes through one `TBL` lookup, so in demo mode the
+  real tables are never referenced. Without the flag the app behaves exactly as
+  before.
+- **Sample content:** ~24 mainstream-history keywords (Apollo 11, Panama Canal,
+  Silk Road…) that are real, searchable WorldCat terms, and 8 well-known
+  documentaries (real titles/years/creators, mixed statuses so the tally and
+  stamps look alive). OCLC/ISBN are intentionally blank — no invented identifiers.
+- **Live edits stick** (the demo tables persist), so you can add a title or promote
+  a brainstormed keyword on camera. The brainstorm chat still calls the real edge
+  function, so a live chat on a safe topic works.
+- **Reset:** re-run `db/004_arch_demo_seed.sql` (owner-run; wipes and reseeds the
+  demo tables only). Tables/policies are in `db/003_arch_demo_tables.sql`; same RLS
+  posture as the real tables (no delete policy). To remove demo mode entirely, drop
+  the three `arch_demo_*` tables.
+- It's a client-side switch, **not a security boundary** — same public-key posture
+  as the rest of the app (see above).
+
 ## Deploying to GitHub Pages
 
 `index.html` is at the repo root, so Pages can serve it as-is:

@@ -52,6 +52,11 @@ body{
   color:var(--ink-faded);
   margin:0 0 4px;
 }
+.demo-tag{
+  font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--ink-faded); border:1px dashed var(--ink-faded); border-radius:2px;
+  padding:1px 6px; margin-left:8px; vertical-align:middle; white-space:nowrap;
+}
 .topbar{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
 .navlinks{ display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
 .nav-link{
@@ -378,6 +383,15 @@ const { useState, useEffect } = React;
 const SUPABASE_URL = 'https://fdbkdsracxomwyytfgob.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_w5izyYtgIXD-pQvjlkn4jg_DtGJq_7j';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Demo mode: open the app with ?demo=1 to read/write the separate arch_demo_* sample
+// tables instead of the real ones. Fails closed — in demo mode the real tables are
+// never referenced (every query goes through TBL).
+const DEMO = new URLSearchParams(location.search).has('demo');
+const DEMO_Q = DEMO ? '?demo=1' : '';
+const TBL = DEMO
+  ? { titles: 'arch_demo_titles', keywords: 'arch_demo_keywords', brainstorms: 'arch_demo_brainstorms' }
+  : { titles: 'arch_titles', keywords: 'arch_keywords', brainstorms: 'arch_brainstorms' };
 
 const ROUTES = ['undetermined', 'UMD', 'ILL'];
 const FORMATS = ['', 'VHS', 'DVD', 'Other'];
@@ -748,7 +762,7 @@ function App() {
     setLoadingTitles(true); setTitlesError(null);
     try {
       const { data, error } = await sb
-        .from('arch_titles')
+        .from(TBL.titles)
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -761,7 +775,7 @@ function App() {
     setLoadingKeywords(true); setKeywordsError(null);
     try {
       const { data, error } = await sb
-        .from('arch_keywords')
+        .from(TBL.keywords)
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -775,7 +789,7 @@ function App() {
   const addTitle = async (payload) => {
     setSavingTitle(true); setTitlesError(null);
     try {
-      const { error } = await sb.from('arch_titles').insert(payload);
+      const { error } = await sb.from(TBL.titles).insert(payload);
       if (error) throw error;
       setShowAddTitle(false);
       await fetchTitles();
@@ -786,7 +800,7 @@ function App() {
   const updateTitle = async (id, changes) => {
     setTitlesError(null);
     try {
-      const { error } = await sb.from('arch_titles').update(changes).eq('id', id);
+      const { error } = await sb.from(TBL.titles).update(changes).eq('id', id);
       if (error) throw error;
       await fetchTitles();
     } catch (e) { setTitlesError("Update didn't go through — " + e.message); }
@@ -795,7 +809,7 @@ function App() {
   const addKeyword = async (termValue) => {
     setKeywordsError(null);
     try {
-      const { error } = await sb.from('arch_keywords').insert({ term: termValue, status: 'unsearched' });
+      const { error } = await sb.from(TBL.keywords).insert({ term: termValue, status: 'unsearched' });
       if (error) throw error;
       await fetchKeywords();
     } catch (e) { setKeywordsError("Add didn't go through — " + e.message); }
@@ -805,7 +819,7 @@ function App() {
     setKeywordsError(null);
     const next = currentStatus === 'searched' ? 'unsearched' : 'searched';
     try {
-      const { error } = await sb.from('arch_keywords').update({ status: next }).eq('id', id);
+      const { error } = await sb.from(TBL.keywords).update({ status: next }).eq('id', id);
       if (error) throw error;
       await fetchKeywords();
     } catch (e) { setKeywordsError("Update didn't go through — " + e.message); }
@@ -819,10 +833,10 @@ function App() {
   return (
     <div className="wrap">
       <div className="topbar">
-        <div className="eyebrow">Personal archive · acquisitions pipeline</div>
+        <div className="eyebrow">Personal archive · acquisitions pipeline{DEMO && <span className="demo-tag">Sample data</span>}</div>
         <div className="navlinks">
           <a className="nav-link" href="https://umaryland.on.worldcat.org/discovery" target="_blank" rel="noopener">WorldCat ↗</a>
-          <a className="nav-link" href="./brainstorm.html">Keyword brainstorm →</a>
+          <a className="nav-link" href={"./brainstorm.html" + DEMO_Q}>Keyword brainstorm →</a>
         </div>
       </div>
       <h1>Documentary Acquisitions Ledger</h1>
