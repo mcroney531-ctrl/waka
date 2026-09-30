@@ -71,7 +71,8 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  // Normalize the secret: a pasted key often carries stray whitespace or wrapping quotes.
+  const apiKey = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim().replace(/^["']|["']$/g, "").trim();
   if (!apiKey) {
     return json({
       error:
@@ -118,8 +119,24 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!anthropicResp.ok) {
-    const detail = await anthropicResp.text();
-    return json({ error: `Anthropic API error (${anthropicResp.status})`, detail }, 502);
+    const raw = await anthropicResp.text();
+    let errType = "", errMsg = "";
+    try {
+      const j = JSON.parse(raw);
+      errType = j?.error?.type ?? "";
+      errMsg = j?.error?.message ?? "";
+    } catch { /* non-JSON body */ }
+    // Private diagnostics (project logs only): status, Anthropic's reason, and the key's
+    // length + standard prefix (never the key itself) so a bad secret is easy to spot.
+    console.error(
+      `anthropic ${anthropicResp.status} type=${errType} msg=${errMsg} keyLen=${apiKey.length} keyPrefix=${apiKey.slice(0, 10)}`,
+    );
+    const hint = anthropicResp.status === 401
+      ? " — the API key was rejected; re-check the ANTHROPIC_API_KEY secret in Supabase."
+      : "";
+    return json({
+      error: `Anthropic API error (${anthropicResp.status})${errMsg ? `: ${errMsg}` : ""}${hint}`,
+    }, 502);
   }
 
   const data = await anthropicResp.json();
