@@ -2,11 +2,12 @@
 // Goal: installability + a home-screen app shell that still loads offline.
 // Deliberately conservative: app pages are network-first (so a deploy is never
 // stuck behind a stale cache), and Supabase traffic is never cached.
-const CACHE = 'dal-v4';
+const CACHE = 'dal-v5';
 const SHELL = [
   './',
   './index.html',
   './brainstorm.html',
+  './auth.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
