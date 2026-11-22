@@ -17,9 +17,14 @@ tables in the shared Reading Center project, and has one edge function,
 - **Allowlist.** `private.arch_owners` holds the human owner's Auth user id
   (`0ccc48c3-…`). It's Waka's own list, separate from Food-planning's
   `private.food_owners`. RLS on, no policies, no client privileges.
-- **Not the QuickSum MCP.** QuickSum's headless MCP must sign in as its own
-  Auth user, which is never added here. Until it is moved off the shared owner
-  account it would pass this check — see "Prerequisites".
+- **One user id, no shared list.** The check is "is `auth.uid()` this one id".
+  Nothing else is granted to any other account. QuickSum's headless MCP
+  currently signs in *as* that same user, so to the database it is the owner:
+  that's a credential-isolation issue (a leaked MCP credential would reach
+  Waka), not something a policy can tell apart. It doesn't block 005 or 006 —
+  today the same tables are open to anyone with the public key — but Waka isn't
+  fully isolated until the MCP has its own Auth user (QuickSum's track), which
+  is never added here.
 - **Ownership check.** `private.is_arch_owner()`: `SECURITY DEFINER`, owner
   `postgres`, empty `search_path`, no arguments (uses `auth.uid()` from the
   verified JWT). `EXECUTE` for `authenticated` only.
@@ -43,10 +48,11 @@ tables in the shared Reading Center project, and has one edge function,
 
 ## Prerequisites
 
-1. **QuickSum MCP on its own Auth user** (QuickSum's track). Until then the
-   MCP signs in as the owner and so would pass `is_arch_owner()`.
-2. **Anthropic key stays invalid or removed** until step 5 below is done and
-   verified. Don't restore a working key before the gated function is live.
+1. **Anthropic key removed** (`ANTHROPIC_API_KEY` deleted from the project's
+   Edge Function secrets) until step 6 below. Without it the current function
+   refuses every call before spending anything.
+2. **Before calling Waka fully secured:** the QuickSum MCP on its own Auth
+   user (see "One user id" above). Not a blocker for the steps below.
 
 ## Deployment order (each step needs approval; verify before the next)
 
@@ -55,13 +61,27 @@ tables in the shared Reading Center project, and has one edge function,
 | 1 | Merge the sign-in PR (Pages deploys `index.html`, `brainstorm.html`, `auth.js`, `sw.js` `dal-v5`) | Live files match the merge commit; signed-out pages still work (old open policies) |
 | 2 | Owner signs in on each device (ledger and brainstorm) | "✓ Signed in" on both pages; reads/writes still work |
 | 3 | Run `005_arch_owner_and_gate-test.sql` on production (rolled back) | `0 failed`, mode `pre-005` |
-| 4 | Apply 005 | Re-run its test: `0 failed`, mode `post-005` |
-| 5 | Deploy `brainstorm-keywords` (`index.ts` + `handler.ts`, `verify_jwt` on) | Signed out / publishable key → `401`; non-owner → `403`; owner → reaches the key check (`503 not configured` while the key is invalid) |
+| 4 | Apply 005 (additive: no existing table, policy or grant changes) | Re-run its test: `0 failed`, mode `post-005`. **Real tokens**, from the live page's console (below): owner → `allowed`; non-owner → `not_owner`; signed out → refused |
+| 5 | Deploy `brainstorm-keywords` (`index.ts` + `handler.ts`, `verify_jwt` on), key still removed | Real tokens: signed out → `401`; non-owner → `403`; owner → `503 "Brainstorm is not configured."` Then merge the PR as the record |
 | 6 | Restore a valid `ANTHROPIC_API_KEY` | Owner brainstorm works; 21st call in 10 min → `429` |
 | 7 | Run `006_arch_owner_rls-test.sql` on production (rolled back) | `0 failed`, mode `pre-006` |
 | 8 | Apply 006 | Live checks below |
 
-The QuickSum MCP isolation (prerequisite 1) has to be done before step 4.
+### Real-token checks (steps 4–5)
+
+On the live `brainstorm.html`, open the browser console. `sb` is the page's
+own client, so these use the real session token, and nothing to copy or paste
+contains a secret:
+
+```js
+// step 4: the gate itself (records one call when allowed)
+await sb.rpc('arch_brainstorm_gate', { p_input_chars: 0 })
+// step 5: the function
+await sb.functions.invoke('brainstorm-keywords', { body: { messages: [{ role: 'user', content: 'test' }] } })
+```
+
+Run each signed in as the owner, signed in as the non-owner test account, and
+signed out. Expected results are in the table.
 
 ## Live checks after 006 (real sessions, not simulated claims)
 
@@ -85,16 +105,34 @@ As the **owner**, on the live pages:
 - a brainstorm turn works and its chips add keywords
 - `?demo` shows the demo rows
 
-## Rollback
+## If something breaks: fix forward first
+
+Reopening the tables to anonymous access is **not** the default rollback.
+Prefer, in order:
+
+1. **Owner locked out / data missing on the page.** The data is never at risk:
+   the Supabase dashboard (Table editor, SQL editor) runs as `postgres` and
+   isn't subject to RLS. Check the signed-in user id matches
+   `private.arch_owners` (`select * from private.arch_owners;` in the SQL
+   editor) and the page shows "✓ Signed in". Fix the allowlist or the session.
+2. **One page workflow fails** (a query the policies don't allow). Add the
+   missing owner-only policy or grant for that one operation (still
+   `to authenticated using ((select private.is_arch_owner()))`), or switch
+   that feature off, rather than reopening a table.
+3. **The brainstorm misbehaves or spends unexpectedly.** Delete the
+   `ANTHROPIC_API_KEY` secret: every call then stops before Anthropic. Tighten
+   the limits in `public.arch_brainstorm_gate()` if needed.
+
+Full rollbacks, last resort only:
 
 - **006** (`006_arch_owner_rls-rollback.sql`): restores the old open
   policies and `grant all` to `anon` and `authenticated`, exactly as captured
-  from production on 2026-11-22. Makes the six tables public again: use only
-  if the owner is locked out and can't be fixed forward.
-- **Function**: redeploy the previous version (v7) only together with an
-  invalid or removed Anthropic key, because v7 spends for anyone with the
-  publishable key. Simpler: leave the gated version; with 005 rolled back
-  it refuses every call (fails closed).
+  from production on 2026-11-22. Makes all six tables publicly readable and
+  writable again; use only if none of the above works, and remove the
+  Anthropic key at the same time.
+- **Function**: don't redeploy the old version (v7) with a working key: it
+  spends for anyone with the publishable key. Leave the gated version; with
+  005 rolled back it refuses every call (fails closed).
 - **005** (`005_arch_owner_and_gate-rollback.sql`): after 006's rollback.
   It refuses to run while 006's policies use `is_arch_owner()`. Leaves
   `private` and Food-planning's objects alone.
