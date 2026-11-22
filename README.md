@@ -108,23 +108,52 @@ prose, so the terms come through a tool call rather than a forced-JSON response)
 Anthropic API directly — that would expose a real API key in public page
 source. Instead it invokes a **Supabase Edge Function** (`brainstorm-keywords`,
 in `supabase/functions/`) which calls Anthropic **server-side**. The key lives
-only as a project secret; the browser never sees it. The function keeps
-`verify_jwt` on, so it's reachable only with the project's anon key — the same
-posture as the tables.
+only as a project secret; the browser never sees it.
 
-**One-time setup — set the Anthropic key as a Supabase secret.** The function
-is deployed but returns a clear "key not set" message until you do this:
+**Who can make it spend money.** Only the signed-in owner. `verify_jwt` alone
+isn't enough (the public publishable key passes the gateway), so on every call
+the function, before it reads the Anthropic key:
+
+1. requires a signed-in user's JWT — the publishable key alone gets `401`;
+2. validates the body: at most 200 KB raw and 64,000 characters sent upstream,
+   40 messages, 20 blocks a message, 8,000 characters per typed message; only
+   `user`/`assistant` roles and the block types the page produces (text,
+   thinking, `propose_keywords` calls and their results) — images, documents,
+   other tools and extra fields are refused or stripped; at most 1,000 existing
+   terms of 200 characters;
+3. calls `public.arch_brainstorm_gate()` **with the caller's own JWT**
+   (`db/005_arch_owner_and_gate.sql`). The gate checks `private.arch_owners`
+   (Waka's own allowlist — not Food-planning's, and never the QuickSum MCP's
+   account) and the rate limit — 20 calls per 10 minutes, 100 calls and
+   1,000,000 input characters per 24 hours — and records the call. A non-owner
+   gets `403`, over the limit `429` with `Retry-After`;
+4. only then calls Anthropic, with the model (`claude-opus-5`), tool, system
+   prompt and `max_tokens` (4,000) fixed in code — nothing from the request
+   can change them — and a 90-second timeout;
+5. returns only `role`, `content` (text, thinking, `propose_keywords` calls)
+   and `stop_reason`.
+
+Errors are logged as status and error type only, never the key or any part of
+it. Tests: `deno test supabase/functions/brainstorm-keywords/handler_test.ts`
+(stubbed network) and `psql -f db/005_arch_owner_and_gate-test.sql` (one
+transaction, always rolled back).
+
+**Setup — the Anthropic key as a Supabase secret.** Set it only after the
+gated function is deployed:
 
 - Supabase dashboard → **Project Settings → Edge Functions → Secrets** → add
   `ANTHROPIC_API_KEY` = your Anthropic API key, **or**
 - CLI: `supabase secrets set ANTHROPIC_API_KEY=sk-ant-… --project-ref fdbkdsracxomwyytfgob`
 
 The key must be a real Anthropic **API** key (from console.anthropic.com), which
-is separate from a Claude.ai subscription. Model: `claude-opus-5`; cost is a few
-cents per brainstorm, billed to that key.
+is separate from a Claude.ai subscription. Cost is a few cents per brainstorm,
+billed to that key. Without it the function answers "Brainstorm is not
+configured." (after the owner and rate checks).
 
 To redeploy the function after editing it: `supabase functions deploy
 brainstorm-keywords --project-ref fdbkdsracxomwyytfgob` (or via the dashboard).
+Deploy `index.ts` and `handler.ts` together, and apply `db/005` first —
+without the gate the function refuses every call.
 
 ## Install on your phone (PWA)
 
