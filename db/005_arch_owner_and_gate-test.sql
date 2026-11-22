@@ -207,8 +207,8 @@ select 'is_arch_owner: definer, owner postgres, empty search_path, EXECUTE for a
        (select substring(state from ' (definer=.*) src=') from pg_temp.state() where state like 'fn private.is_arch_owner()%'), null;
 insert into _res (label, expect, outcome, pass)
 select 'private tables: RLS on, no client privileges',
-       'rel private.arch_brainstorm_calls kind=r rls=true owner=postgres acl=postgres=arwdDxt' || case when current_setting('server_version_num')::int >= 170000 then 'm' else '' end || '/postgres|rel private.arch_owners kind=r rls=true owner=postgres acl=postgres=arwdDxt' || case when current_setting('server_version_num')::int >= 170000 then 'm' else '' end || '/postgres',
-       (select string_agg(state, '|' order by state) from pg_temp.state() where state in (select state from pg_temp.state() where state like 'rel private.arch\_brainstorm\_calls %' or state like 'rel private.arch\_owners %')), null;
+       'rel private.arch_brainstorm_calls kind=r rls=true owner=postgres acl=postgres=arwdDxt' || case when current_setting('server_version_num')::int >= 170000 then 'm' else '' end || '/postgres; rel private.arch_owners kind=r rls=true owner=postgres acl=postgres=arwdDxt' || case when current_setting('server_version_num')::int >= 170000 then 'm' else '' end || '/postgres',
+       (select string_agg(state, '; ' order by state) from pg_temp.state() where state in (select state from pg_temp.state() where state like 'rel private.arch\_brainstorm\_calls %' or state like 'rel private.arch\_owners %')), null;
 insert into _res (label, expect, outcome, pass)
 select 'call-log sequence: no client privileges', 'postgres only',
        case when (select coalesce(array_to_string(relacl, ' '), '') from pg_class where oid = 'private.arch_brainstorm_calls_id_seq'::regclass) ~ '(anon|authenticated|service_role)='
@@ -218,11 +218,34 @@ select 'private schema: no USAGE for anon or PUBLIC', 'authenticated=U/postgres 
        (select substring(state from 'acl=(.*)') from pg_temp.state() where state like 'schema private%'), null;
 
 -- ===== rollback =====
+-- Compared against the snapshot only when 005 wasn't live before the test
+-- (pre-005 mode). If it was, the rollback can't return to "before" by design;
+-- if 006 is live too, the rollback must refuse (its policies use
+-- is_arch_owner()), which is checked instead.
+select exists (select 1 from _before where state like 'fn private.is_arch_owner()%') as pre_live,
+       exists (select 1 from pg_policy where pg_get_expr(polqual, polrelid) like '%is_arch_owner%') as rls_live \gset
+\if :rls_live
+do $$
+begin
+  begin
+    drop function private.is_arch_owner();
+    insert into pg_temp._res (label, expect, outcome, pass) values ('rollback refuses while 006 policies use is_arch_owner()', '2BP01', 'dropped', false);
+  exception when sqlstate '2BP01' then
+    insert into pg_temp._res (label, expect, outcome, pass) values ('rollback refuses while 006 policies use is_arch_owner()', '2BP01', '2BP01', true);
+  end;
+end $$;
+\else
 \ir 005_arch_owner_and_gate-rollback.sql
 insert into _res (label, expect, outcome, pass)
 select 'rollback restores the exact pre-005 state', '0 differences',
-  (select count(*) from ((select * from _before except select * from pg_temp.state())
-                         union all (select * from pg_temp.state() except select * from _before)) d) || ' differences', null;
+  case when :'pre_live' then '0 differences'  -- n/a: 005 was already live
+       else (select count(*) from ((select * from _before except select * from pg_temp.state())
+                                   union all (select * from pg_temp.state() except select * from _before)) d) || ' differences' end, null;
+\endif
+insert into _res (label, expect, outcome, pass)
+select 'mode', 'any', case when :'rls_live' then 'post-006 regression (005 and 006 live)'
+                           when :'pre_live' then 'post-005 regression (rollback comparison not applicable)'
+                           else 'pre-005 (rollback compared against snapshot)' end, true;
 
 update _res set pass = (outcome = expect) where pass is null;
 select (select count(*) filter (where pass) from _res) || ' passed, ' || (select count(*) filter (where not pass or pass is null) from _res) || ' failed' as summary,
