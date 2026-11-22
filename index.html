@@ -367,7 +367,8 @@ a.kw-term:hover{ text-decoration:underline; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="./auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
 <script type="text/babel">
@@ -382,7 +383,10 @@ const { useState, useEffect } = React;
 // ---------------------------------------------------------------------------
 const SUPABASE_URL = 'https://fdbkdsracxomwyytfgob.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_w5izyYtgIXD-pQvjlkn4jg_DtGJq_7j';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// One client per page, shared session; sign-in UI and session handling live
+// in auth.js. Signed in, every query and the brainstorm function carry the
+// owner's session.
+const sb = WakaAuth.init(SUPABASE_URL, SUPABASE_KEY);
 
 // Demo mode: open the app with ?demo=1 to read/write the separate arch_demo_* sample
 // tables instead of the real ones. Fails closed — in demo mode the real tables are
