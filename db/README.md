@@ -46,64 +46,81 @@ tables in the shared Reading Center project, and has one edge function,
 - **Demo mode** (`?demo`) reads the `arch_demo_*` tables, so it now needs the
   owner signed in too.
 
-## Prerequisites
+## Status (2026-11-22)
 
-1. **Anthropic key removed** (`ANTHROPIC_API_KEY` deleted from the project's
-   Edge Function secrets) until step 6 below. Without it the current function
-   refuses every call before spending anything.
-2. **Before calling Waka fully secured:** the QuickSum MCP on its own Auth
-   user (see "One user id" above). Not a blocker for the steps below.
+**Live in production.** The six tables are owner-only, and the brainstorm
+function is gated. The Anthropic key is **deliberately absent**, so the
+brainstorm answers "Brainstorm is not configured." Turning it back on is a
+separate decision about cost (see "Turning the brainstorm on" below).
 
-## Deployment order (each step needs approval; verify before the next)
+| | |
+|---|---|
+| Repo | `main` at `1e6f78a` (#1 `dc1d88d`, #2 `0942a0b`, #3 `1e6f78a`) |
+| Migrations | `20261122195146 arch_owner_and_gate` (005), `20261122213855 arch_owner_rls` (006) |
+| Edge function | `brainstorm-keywords` v9, `verify_jwt` on, files byte-identical to `main` |
+| Open item | QuickSum's MCP still signs in as the owner (see "One user id" above): tracked in QuickSum's work |
 
-| # | Step | Verify |
+## Rollout record
+
+Every step was approved separately and verified before the next. All
+production tests ran in a single transaction that ended in an error, so
+nothing persisted. Before/after fingerprints confirmed that every time.
+
+| # | Step | Evidence |
 |---|---|---|
-| 1 | Merge the sign-in PR (Pages deploys `index.html`, `brainstorm.html`, `auth.js`, `sw.js` `dal-v5`) | Live files match the merge commit; signed-out pages still work (old open policies) |
-| 2 | Owner signs in on each device (ledger and brainstorm) | "✓ Signed in" on both pages; reads/writes still work |
-| 3 | Run `005_arch_owner_and_gate-test.sql` on production (rolled back) | `0 failed`, mode `pre-005` |
-| 4 | Apply 005 (additive: no existing table, policy or grant changes) | Re-run its test: `0 failed`, mode `post-005`. **Real tokens**, from the live page's console (below): owner → `allowed`; non-owner → `not_owner`; signed out → refused |
-| 5 | Deploy `brainstorm-keywords` (`index.ts` + `handler.ts`, `verify_jwt` on), key still removed | Real tokens: signed out → `401`; non-owner → `403`; owner → `503 "Brainstorm is not configured."` Then merge the PR as the record |
-| 6 | Restore a valid `ANTHROPIC_API_KEY` | Owner brainstorm works; 21st call in 10 min → `429` |
-| 7 | Run `006_arch_owner_rls-test.sql` on production (rolled back) | `0 failed`, mode `pre-006` |
-| 8 | Apply 006 | Live checks below |
+| 1 | Merged #1 (sign-in) | Live Pages files byte-identical to `dc1d88d`; both pages loaded signed out, data still open |
+| 2 | Owner signed in on the phone | Both pages "✓ Signed in"; existing data loaded; an edit saved |
+| 3 | 005 test on production, before applying | 43/43, mode `pre-005`. Access fingerprint `82d9eb35…` and all data hashes identical before and after |
+| 4 | Applied 005 (file hash `1762786b…`) | Post-005 test 43/43. The pre-existing access state still matched `82d9eb35…`; only 005's objects were added. The allowlist holds only the owner. Signed-out gate call → `401 42501`, and `private` isn't reachable (`PGRST106`) |
+| 5 | Removed `ANTHROPIC_API_KEY`; deployed the function from `aacd9ba` as v9 | Probe before deploying → `500 "not set"`. Deployed source read back and byte-identical. Publishable key or no auth → `401`; forged JWT → `401 Invalid JWT` |
+| 5a | Real-session checks on the phone | Owner → "Brainstorm is not configured."; test account → "This account isn't allowed…"; signed out → "Sign in to use the brainstorm." The call log showed 1 owner call and 0 others, and Anthropic was never called |
+| 5b | Merged #2, pinned to `4c23db6` | `main` function files byte-identical to v9 |
+| 6 | 006 test on production, before applying (with `lock_timeout 3s`, `statement_timeout 60s`) | 156/156, mode `pre-006`. Access fingerprint `f8b3368a…` and all data hashes identical before and after |
+| 7 | Applied 006 (file hash `340651b5…`) | Post-006 test 156/156. Exactly 18 owner-only policies; grants `authenticated=arw` only; data hashes unchanged. With the publishable key, select, insert, update and delete on all six tables → `401 42501` (24/24) |
+| 8 | Phone checks after 006 | Owner: ledger loads, keyword add and edit persist, saved chats load, `?demo` loads. Signed out: no data. Test account: no data, and its test keyword was refused (confirmed absent in the database) |
+| 9 | Merged #3, pinned to `45ea0e0` | `main` = `1e6f78a`; signed-out read still `401` |
 
-### Real-token checks (steps 4–5)
+## Turning the brainstorm on
 
-On the live `brainstorm.html`, open the browser console. `sb` is the page's
-own client, so these use the real session token, and nothing to copy or paste
-contains a secret:
+Add `ANTHROPIC_API_KEY` under Project Settings → Edge Functions → Secrets.
+Then send one brainstorm message as the owner. It should get a reply, and the
+call should count against the rate limit (20 per 10 minutes, 100 per day).
+No code or database change is needed.
 
-```js
-// step 4: the gate itself (records one call when allowed)
-await sb.rpc('arch_brainstorm_gate', { p_input_chars: 0 })
-// step 5: the function
-await sb.functions.invoke('brainstorm-keywords', { body: { messages: [{ role: 'user', content: 'test' }] } })
-```
+## Setting up a fresh project
 
-Run each signed in as the owner, signed in as the non-owner test account, and
-signed out. Expected results are in the table.
+The same order applies; adapt the ids:
+
+1. Ship the sign-in pages, then sign in as the owner.
+2. Run the 005 test (expect `pre-005`), apply 005, then re-run the test (`post-005`).
+3. Deploy the function (`index.ts` and `handler.ts`, `verify_jwt` on), with no Anthropic key yet.
+4. Check with real sessions that signed out → `401`, non-owner → `403`, and owner → `503 not configured`.
+5. Run the 006 test (`pre-006`), apply 006, then re-run the test (`post-006`).
+6. Do the live checks below.
+7. Add the Anthropic key when you want the brainstorm.
 
 ## Live checks after 006 (real sessions, not simulated claims)
 
-With the publishable key and no session (curl or a private window):
+With the publishable key and no session (curl or a private window), check the
+HTTP status, not just an empty result:
 
-- `GET /rest/v1/arch_keywords?select=id&limit=1` → `401`/`42501`, for all six tables
-- `POST` an insert, `PATCH` an update, `DELETE` → `42501`
-- `POST /rest/v1/rpc/arch_brainstorm_gate` → `401`/`42501`
+- `GET`, `POST`, `PATCH` and `DELETE` on all six tables → `401` / `42501`
+- `POST /rest/v1/rpc/arch_brainstorm_gate` → `401` / `42501`
 - `POST /functions/v1/brainstorm-keywords` → `401` "Sign in to use the brainstorm."
 
-As the **non-owner test account** (`24c39f7f-…`), signed in on the live pages:
+As the **non-owner test account**, in a private tab on the live pages:
 
-- the ledger, keywords and brainstorm list are empty; demo mode is empty
-- adding a keyword or title shows an error, and no row appears for the owner
+- the ledger, keywords, brainstorm list and demo mode are all empty
+- adding a keyword (use something unmistakable, like `ZZ-NONOWNER-TEST-DELETE-ME`)
+  fails, and the database shows no such row
 - sending a brainstorm message → "This account isn't allowed to use the brainstorm."
 
 As the **owner**, on the live pages:
 
-- the ledger and keywords show the existing rows (102 keywords today);
-  add, edit and archive work; the brainstorm list shows the saved chats
-- a brainstorm turn works and its chips add keywords
-- `?demo` shows the demo rows
+- the ledger and keywords show the existing rows
+- adding a keyword and changing its status both persist after a reload
+  (there's no delete, so use a real term)
+- the brainstorm list shows the saved chats, and `?demo` shows the demo rows
 
 ## If something breaks: fix forward first
 
@@ -137,7 +154,7 @@ Full rollbacks, last resort only:
   It refuses to run while 006's policies use `is_arch_owner()`. Leaves
   `private` and Food-planning's objects alone.
 
-## Verification so far (local Postgres 16 configured like Supabase)
+## Local verification (Postgres 16 configured like Supabase)
 
 | Check | Result |
 |---|---|
