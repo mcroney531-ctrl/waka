@@ -49,37 +49,23 @@ two `arch_` tables are touched.
 
 ## Security posture (read before sharing the URL)
 
-This is a personal, single-user, **no-auth** tool. The Supabase project URL and
-publishable (anon) key are baked into the pages. That is by design — those
-values are meant to be public; they are not secrets. Access is governed instead
-by Row Level Security on the three `arch_` tables.
+The Supabase project URL and publishable key are baked into the pages. That is
+by design — they identify the project and are not secrets. Access is decided by
+who is signed in:
 
-**Applied policy** (see `db/001_arch_public_rls_policies.sql` and
-`db/002_arch_brainstorms_table.sql`):
+- **Owner sign-in** (email + password, Supabase Auth; public sign-ups are off).
+  Both pages share one session (`auth.js`).
+- **Owner-only Row Level Security** on all six `arch_*` tables, demo tables
+  included (`db/006_arch_owner_rls.sql`): only the user on Waka's allowlist
+  (`private.arch_owners`, `db/005_arch_owner_and_gate.sql`) can read, add or
+  edit. Nobody signed out can read or write anything. There is still **no
+  delete** anywhere; removal is a soft archive.
+- **The brainstorm function** spends only for the signed-in owner, within a
+  rate limit (see "Keyword brainstorm" below).
 
-- `SELECT`, `INSERT`, `UPDATE` are open (`using (true)`) to the `anon` and
-  `authenticated` roles so the browser app can function without a login.
-- **No `DELETE` policy exists on any table** — on purpose. The anon key can add
-  and edit rows but **cannot delete** them, which caps the worst case to
-  vandalism/edits rather than data loss. (Removing a saved brainstorm is a soft
-  archive via `UPDATE`, not a delete.)
-- Policies target `anon, authenticated` explicitly rather than the implicit
-  `PUBLIC` role (which in Postgres covers every role).
-
-**The accepted tradeoff:** anyone who has the URL (and therefore the public key)
-can read and write these tables. For an unlinked personal tool this is fine.
-It was a deliberate call, not a default — and it was reached after ruling out
-the alternatives:
-
-- A "shared secret" checked in RLS would be security theater here, because the
-  secret would sit in the same public page source.
-- Without auth, RLS cannot distinguish "the owner" from "anyone" — the anon role
-  is the anon role. So open policies are the honest floor.
-
-**Upgrade path (if this ever gets linked, shared, or goes multi-user):** add
-Supabase Auth (magic link is enough for one user) and replace the open policies
-with `auth.uid()`-scoped ones. That is the real fix and it does not require
-rebuilding the UI. It was left out of this pass on purpose.
+`db/README.md` has the access model, the deployment order, the live owner /
+non-owner checks and the rollback procedures. `db/001`–`004` are the history:
+the earlier open, no-auth policies that 006 replaces.
 
 ## Keyword brainstorm (AI, `brainstorm.html`)
 
@@ -96,7 +82,7 @@ and can't be re-added.
 **Saved sessions.** Each conversation auto-saves to the `arch_brainstorms` table
 and appears in the sidebar to reopen, rename, or remove. Removing is a soft
 archive (`archived = true`) — consistent with the no-hard-delete posture below,
-so nothing is ever truly deleted via the anon key. Promoted keywords live in
+so nothing is ever truly deleted from the app. Promoted keywords live in
 `arch_keywords` regardless of what happens to the chat.
 
 **Under the hood.** The page keeps the message history in the browser and sends
@@ -200,11 +186,12 @@ is part of the switch, so real chat history never shows up in a demo.
   a brainstormed keyword on camera. The brainstorm chat still calls the real edge
   function, so a live chat on a safe topic works.
 - **Reset:** re-run `db/004_arch_demo_seed.sql` (owner-run; wipes and reseeds the
-  demo tables only). Tables/policies are in `db/003_arch_demo_tables.sql`; same RLS
-  posture as the real tables (no delete policy). To remove demo mode entirely, drop
+  demo tables only). Tables are in `db/003_arch_demo_tables.sql`; RLS is owner-only
+  like the real tables, with no delete policy. To remove demo mode entirely, drop
   the three `arch_demo_*` tables.
-- It's a client-side switch, **not a security boundary** — same public-key posture
-  as the rest of the app (see above).
+- It's a client-side switch, **not a security boundary**. The demo tables have the
+  same owner-only RLS as the real ones (`db/006`), so demo mode needs the owner
+  signed in too.
 
 ## Deploying to GitHub Pages
 
